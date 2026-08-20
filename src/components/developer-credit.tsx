@@ -6,7 +6,7 @@ type DeveloperCreditProps = {
 export function DeveloperCredit({ className = "" }: DeveloperCreditProps) {
   return (
     <span className={`font-medium ${className}`.trim()}>
-      Criação e desenvolvimento: Ariane Sóllner
+      • Desenvolvido por Ariane Sóllner
     </span>
   );
 }

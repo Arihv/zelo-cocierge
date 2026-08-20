@@ -1,61 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { guestNav } from "@/lib/nav";
-import { supabase } from "@/lib/supabase";
+import { useOrdersStore } from "@/hooks/use-orders-store";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { History, Package, Clock, CheckCircle2, DollarSign, ArrowUpRight } from "lucide-react";
+import { History, Package, CheckCircle2, DollarSign } from "lucide-react";
 
 export const Route = createFileRoute("/hospede/historico")({
   component: HospedeHistorico,
 });
 
 export function HospedeHistorico() {
-  const [pedidos, setPedidos] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchPedidos = async () => {
-    try {
-      // 1. Busca do Supabase em Nuvem
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (data && data.length > 0) {
-        setPedidos(data);
-      } else {
-        const local = localStorage.getItem("zelo_historico_pedidos");
-        if (local) setPedidos(JSON.parse(local));
-      }
-    } catch {
-      const local = localStorage.getItem("zelo_historico_pedidos");
-      if (local) setPedidos(JSON.parse(local));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchPedidos();
-
-    // Sincronização em tempo real do Supabase
-    const channel = supabase
-      .channel("realtime-guest-orders")
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
-        fetchPedidos();
-      })
-      .subscribe();
-
-    window.addEventListener("zelo_orders_updated", fetchPedidos);
-
-    return () => {
-      supabase.removeChannel(channel);
-      window.removeEventListener("zelo_orders_updated", fetchPedidos);
-    };
-  }, []);
+  const { orders: pedidos, loading } = useOrdersStore();
 
   const totalGasto = pedidos.reduce((acc, p) => {
     const val = parseFloat(String(p.valor || "0").replace(/[^\d,-]/g, "").replace(",", "."));

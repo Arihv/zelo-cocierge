@@ -116,9 +116,8 @@ export function DashboardShell({ title, subtitle, role, nav, logoutTo, children 
         </div>
         <NavList onNav={() => setOpen(false)} />
       </div>
-      <div className="space-y-1 border-t p-4 text-[11px] leading-relaxed text-muted-foreground">
+      <div className="border-t p-4 text-[11px] leading-relaxed text-muted-foreground">
         <div>© {new Date().getFullYear()} Zelo Concierge e Hospitalidade</div>
-        <DeveloperCredit className="text-primary" />
       </div>
     </aside>
   );

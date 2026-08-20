@@ -10,6 +10,7 @@ export const guestNav: NavItem[] = [
   { to: "/hospede/servicos", label: "Serviços", icon: ConciergeBell },
   { to: "/hospede/kits", label: "Kits", icon: Package },
   { to: "/hospede/mercado", label: "Mercado", icon: ShoppingBasket },
+  { to: "/hospede/carrinho", label: "Carrinho", icon: CreditCard },
   { to: "/hospede/historico", label: "Histórico", icon: History },
 ];
 
@@ -18,6 +19,7 @@ export const ownerNav: NavItem[] = [
   { to: "/proprietario/apartamentos", label: "Apartamentos", icon: Home },
   { to: "/proprietario/servicos", label: "Serviços", icon: ConciergeBell },
   { to: "/proprietario/mercado", label: "Mercado", icon: ShoppingBasket },
+  { to: "/proprietario/kits", label: "Kits & Cardápio", icon: Package },
   { to: "/proprietario/manutencao", label: "Manutenção", icon: Wrench },
   { to: "/proprietario/pedidos", label: "Histórico de Pedidos", icon: History },
   { to: "/proprietario/parcerias", label: "Parcerias", icon: Handshake },
@@ -31,6 +33,7 @@ export const adminNav: NavItem[] = [
   { to: "/admin/reservas", label: "Reservas", icon: CalendarRange },
   { to: "/admin/pedidos", label: "Pedidos", icon: History },
   { to: "/admin/mercado", label: "Gestão do Mercado", icon: ShoppingBasket },
+  { to: "/admin/kits", label: "Kits & Cardápio", icon: Package },
   { to: "/admin/precos", label: "Tabela de Preços", icon: Tags },
   { to: "/admin/financeiro", label: "Financeiro & Contas", icon: WalletCards },
   { to: "/admin/parcerias", label: "Parcerias", icon: Handshake },

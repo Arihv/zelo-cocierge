@@ -18,6 +18,7 @@ import { Route as TermosRouteImport } from './routes/termos'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 import { Route as AdminFinanceiroRouteImport } from './routes/admin.financeiro'
 import { Route as AdminImoveisRouteImport } from './routes/admin.imoveis'
+import { Route as AdminKitsRouteImport } from './routes/admin.kits'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminMercadoRouteImport } from './routes/admin.mercado'
 import { Route as AdminParceriasRouteImport } from './routes/admin.parcerias'
@@ -26,6 +27,7 @@ import { Route as AdminPrecosRouteImport } from './routes/admin.precos'
 import { Route as AdminReservasRouteImport } from './routes/admin.reservas'
 import { Route as AdminServicosRouteImport } from './routes/admin.servicos'
 import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
+import { Route as HospedeCarrinhoRouteImport } from './routes/hospede.carrinho'
 import { Route as HospedeDashboardRouteImport } from './routes/hospede.dashboard'
 import { Route as HospedeHistoricoRouteImport } from './routes/hospede.historico'
 import { Route as HospedeKitsRouteImport } from './routes/hospede.kits'
@@ -37,6 +39,7 @@ import { Route as HospedeServicosRouteImport } from './routes/hospede.servicos'
 import { Route as HospedeVincularRouteImport } from './routes/hospede.vincular'
 import { Route as ProprietarioApartamentosRouteImport } from './routes/proprietario.apartamentos'
 import { Route as ProprietarioDashboardRouteImport } from './routes/proprietario.dashboard'
+import { Route as ProprietarioKitsRouteImport } from './routes/proprietario.kits'
 import { Route as ProprietarioLoginRouteImport } from './routes/proprietario.login'
 import { Route as ProprietarioManutencaoRouteImport } from './routes/proprietario.manutencao'
 import { Route as ProprietarioMercadoRouteImport } from './routes/proprietario.mercado'
@@ -90,6 +93,11 @@ const AdminImoveisRoute = AdminImoveisRouteImport.update({
   path: '/admin/imoveis',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminKitsRoute = AdminKitsRouteImport.update({
+  id: '/admin/kits',
+  path: '/admin/kits',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminLoginRoute = AdminLoginRouteImport.update({
   id: '/admin/login',
   path: '/admin/login',
@@ -128,6 +136,11 @@ const AdminServicosRoute = AdminServicosRouteImport.update({
 const AdminUsuariosRoute = AdminUsuariosRouteImport.update({
   id: '/admin/usuarios',
   path: '/admin/usuarios',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HospedeCarrinhoRoute = HospedeCarrinhoRouteImport.update({
+  id: '/hospede/carrinho',
+  path: '/hospede/carrinho',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HospedeDashboardRoute = HospedeDashboardRouteImport.update({
@@ -186,6 +199,11 @@ const ProprietarioDashboardRoute = ProprietarioDashboardRouteImport.update({
   path: '/proprietario/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProprietarioKitsRoute = ProprietarioKitsRouteImport.update({
+  id: '/proprietario/kits',
+  path: '/proprietario/kits',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProprietarioLoginRoute = ProprietarioLoginRouteImport.update({
   id: '/proprietario/login',
   path: '/proprietario/login',
@@ -232,6 +250,7 @@ export interface FileRoutesByFullPath {
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/financeiro': typeof AdminFinanceiroRoute
   '/admin/imoveis': typeof AdminImoveisRoute
+  '/admin/kits': typeof AdminKitsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/mercado': typeof AdminMercadoRoute
   '/admin/parcerias': typeof AdminParceriasRoute
@@ -240,6 +259,7 @@ export interface FileRoutesByFullPath {
   '/admin/reservas': typeof AdminReservasRoute
   '/admin/servicos': typeof AdminServicosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
+  '/hospede/carrinho': typeof HospedeCarrinhoRoute
   '/hospede/dashboard': typeof HospedeDashboardRoute
   '/hospede/historico': typeof HospedeHistoricoRoute
   '/hospede/kits': typeof HospedeKitsRoute
@@ -251,6 +271,7 @@ export interface FileRoutesByFullPath {
   '/hospede/vincular': typeof HospedeVincularRoute
   '/proprietario/apartamentos': typeof ProprietarioApartamentosRoute
   '/proprietario/dashboard': typeof ProprietarioDashboardRoute
+  '/proprietario/kits': typeof ProprietarioKitsRoute
   '/proprietario/login': typeof ProprietarioLoginRoute
   '/proprietario/manutencao': typeof ProprietarioManutencaoRoute
   '/proprietario/mercado': typeof ProprietarioMercadoRoute
@@ -269,6 +290,7 @@ export interface FileRoutesByTo {
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/financeiro': typeof AdminFinanceiroRoute
   '/admin/imoveis': typeof AdminImoveisRoute
+  '/admin/kits': typeof AdminKitsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/mercado': typeof AdminMercadoRoute
   '/admin/parcerias': typeof AdminParceriasRoute
@@ -277,6 +299,7 @@ export interface FileRoutesByTo {
   '/admin/reservas': typeof AdminReservasRoute
   '/admin/servicos': typeof AdminServicosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
+  '/hospede/carrinho': typeof HospedeCarrinhoRoute
   '/hospede/dashboard': typeof HospedeDashboardRoute
   '/hospede/historico': typeof HospedeHistoricoRoute
   '/hospede/kits': typeof HospedeKitsRoute
@@ -288,6 +311,7 @@ export interface FileRoutesByTo {
   '/hospede/vincular': typeof HospedeVincularRoute
   '/proprietario/apartamentos': typeof ProprietarioApartamentosRoute
   '/proprietario/dashboard': typeof ProprietarioDashboardRoute
+  '/proprietario/kits': typeof ProprietarioKitsRoute
   '/proprietario/login': typeof ProprietarioLoginRoute
   '/proprietario/manutencao': typeof ProprietarioManutencaoRoute
   '/proprietario/mercado': typeof ProprietarioMercadoRoute
@@ -307,6 +331,7 @@ export interface FileRoutesById {
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/financeiro': typeof AdminFinanceiroRoute
   '/admin/imoveis': typeof AdminImoveisRoute
+  '/admin/kits': typeof AdminKitsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/mercado': typeof AdminMercadoRoute
   '/admin/parcerias': typeof AdminParceriasRoute
@@ -315,6 +340,7 @@ export interface FileRoutesById {
   '/admin/reservas': typeof AdminReservasRoute
   '/admin/servicos': typeof AdminServicosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
+  '/hospede/carrinho': typeof HospedeCarrinhoRoute
   '/hospede/dashboard': typeof HospedeDashboardRoute
   '/hospede/historico': typeof HospedeHistoricoRoute
   '/hospede/kits': typeof HospedeKitsRoute
@@ -326,6 +352,7 @@ export interface FileRoutesById {
   '/hospede/vincular': typeof HospedeVincularRoute
   '/proprietario/apartamentos': typeof ProprietarioApartamentosRoute
   '/proprietario/dashboard': typeof ProprietarioDashboardRoute
+  '/proprietario/kits': typeof ProprietarioKitsRoute
   '/proprietario/login': typeof ProprietarioLoginRoute
   '/proprietario/manutencao': typeof ProprietarioManutencaoRoute
   '/proprietario/mercado': typeof ProprietarioMercadoRoute
@@ -346,6 +373,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/financeiro'
     | '/admin/imoveis'
+    | '/admin/kits'
     | '/admin/login'
     | '/admin/mercado'
     | '/admin/parcerias'
@@ -354,6 +382,7 @@ export interface FileRouteTypes {
     | '/admin/reservas'
     | '/admin/servicos'
     | '/admin/usuarios'
+    | '/hospede/carrinho'
     | '/hospede/dashboard'
     | '/hospede/historico'
     | '/hospede/kits'
@@ -365,6 +394,7 @@ export interface FileRouteTypes {
     | '/hospede/vincular'
     | '/proprietario/apartamentos'
     | '/proprietario/dashboard'
+    | '/proprietario/kits'
     | '/proprietario/login'
     | '/proprietario/manutencao'
     | '/proprietario/mercado'
@@ -383,6 +413,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/financeiro'
     | '/admin/imoveis'
+    | '/admin/kits'
     | '/admin/login'
     | '/admin/mercado'
     | '/admin/parcerias'
@@ -391,6 +422,7 @@ export interface FileRouteTypes {
     | '/admin/reservas'
     | '/admin/servicos'
     | '/admin/usuarios'
+    | '/hospede/carrinho'
     | '/hospede/dashboard'
     | '/hospede/historico'
     | '/hospede/kits'
@@ -402,6 +434,7 @@ export interface FileRouteTypes {
     | '/hospede/vincular'
     | '/proprietario/apartamentos'
     | '/proprietario/dashboard'
+    | '/proprietario/kits'
     | '/proprietario/login'
     | '/proprietario/manutencao'
     | '/proprietario/mercado'
@@ -420,6 +453,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/financeiro'
     | '/admin/imoveis'
+    | '/admin/kits'
     | '/admin/login'
     | '/admin/mercado'
     | '/admin/parcerias'
@@ -428,6 +462,7 @@ export interface FileRouteTypes {
     | '/admin/reservas'
     | '/admin/servicos'
     | '/admin/usuarios'
+    | '/hospede/carrinho'
     | '/hospede/dashboard'
     | '/hospede/historico'
     | '/hospede/kits'
@@ -439,6 +474,7 @@ export interface FileRouteTypes {
     | '/hospede/vincular'
     | '/proprietario/apartamentos'
     | '/proprietario/dashboard'
+    | '/proprietario/kits'
     | '/proprietario/login'
     | '/proprietario/manutencao'
     | '/proprietario/mercado'
@@ -458,6 +494,7 @@ export interface RootRouteChildren {
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminFinanceiroRoute: typeof AdminFinanceiroRoute
   AdminImoveisRoute: typeof AdminImoveisRoute
+  AdminKitsRoute: typeof AdminKitsRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminMercadoRoute: typeof AdminMercadoRoute
   AdminParceriasRoute: typeof AdminParceriasRoute
@@ -466,6 +503,7 @@ export interface RootRouteChildren {
   AdminReservasRoute: typeof AdminReservasRoute
   AdminServicosRoute: typeof AdminServicosRoute
   AdminUsuariosRoute: typeof AdminUsuariosRoute
+  HospedeCarrinhoRoute: typeof HospedeCarrinhoRoute
   HospedeDashboardRoute: typeof HospedeDashboardRoute
   HospedeHistoricoRoute: typeof HospedeHistoricoRoute
   HospedeKitsRoute: typeof HospedeKitsRoute
@@ -477,6 +515,7 @@ export interface RootRouteChildren {
   HospedeVincularRoute: typeof HospedeVincularRoute
   ProprietarioApartamentosRoute: typeof ProprietarioApartamentosRoute
   ProprietarioDashboardRoute: typeof ProprietarioDashboardRoute
+  ProprietarioKitsRoute: typeof ProprietarioKitsRoute
   ProprietarioLoginRoute: typeof ProprietarioLoginRoute
   ProprietarioManutencaoRoute: typeof ProprietarioManutencaoRoute
   ProprietarioMercadoRoute: typeof ProprietarioMercadoRoute
@@ -551,6 +590,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminImoveisRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/kits': {
+      id: '/admin/kits'
+      path: '/admin/kits'
+      fullPath: '/admin/kits'
+      preLoaderRoute: typeof AdminKitsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/login': {
       id: '/admin/login'
       path: '/admin/login'
@@ -605,6 +651,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/usuarios'
       fullPath: '/admin/usuarios'
       preLoaderRoute: typeof AdminUsuariosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hospede/carrinho': {
+      id: '/hospede/carrinho'
+      path: '/hospede/carrinho'
+      fullPath: '/hospede/carrinho'
+      preLoaderRoute: typeof HospedeCarrinhoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/hospede/dashboard': {
@@ -684,6 +737,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProprietarioDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/proprietario/kits': {
+      id: '/proprietario/kits'
+      path: '/proprietario/kits'
+      fullPath: '/proprietario/kits'
+      preLoaderRoute: typeof ProprietarioKitsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/proprietario/login': {
       id: '/proprietario/login'
       path: '/proprietario/login'
@@ -746,6 +806,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminDashboardRoute: AdminDashboardRoute,
   AdminFinanceiroRoute: AdminFinanceiroRoute,
   AdminImoveisRoute: AdminImoveisRoute,
+  AdminKitsRoute: AdminKitsRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminMercadoRoute: AdminMercadoRoute,
   AdminParceriasRoute: AdminParceriasRoute,
@@ -754,6 +815,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminReservasRoute: AdminReservasRoute,
   AdminServicosRoute: AdminServicosRoute,
   AdminUsuariosRoute: AdminUsuariosRoute,
+  HospedeCarrinhoRoute: HospedeCarrinhoRoute,
   HospedeDashboardRoute: HospedeDashboardRoute,
   HospedeHistoricoRoute: HospedeHistoricoRoute,
   HospedeKitsRoute: HospedeKitsRoute,
@@ -765,6 +827,7 @@ const rootRouteChildren: RootRouteChildren = {
   HospedeVincularRoute: HospedeVincularRoute,
   ProprietarioApartamentosRoute: ProprietarioApartamentosRoute,
   ProprietarioDashboardRoute: ProprietarioDashboardRoute,
+  ProprietarioKitsRoute: ProprietarioKitsRoute,
   ProprietarioLoginRoute: ProprietarioLoginRoute,
   ProprietarioManutencaoRoute: ProprietarioManutencaoRoute,
   ProprietarioMercadoRoute: ProprietarioMercadoRoute,

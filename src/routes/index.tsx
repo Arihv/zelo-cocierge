@@ -29,32 +29,34 @@ export function IndexPage() {
 
       {/* Header Superior Translúcido */}
       <header className="border-b border-[#c6a35d]/15 bg-[#081f19]/80 backdrop-blur-md sticky top-0 z-40">
-        <div className="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-4 sm:h-20 sm:gap-4 sm:px-6">
           <div className="flex items-center gap-3">
             <img 
               src="/zelo-logo.png" 
               alt="Zelo Logo" 
-              className="h-11 w-11 object-contain rounded-xl border border-[#c6a35d]/30 shadow-md bg-[#0a261f]"
+              className="h-9 w-9 shrink-0 rounded-lg border border-[#c6a35d]/30 bg-[#0a261f] object-contain shadow-md sm:h-11 sm:w-11 sm:rounded-xl"
               onError={(e) => {
                 e.currentTarget.style.display = "none";
               }}
             />
-            <span className="font-serif tracking-[0.25em] text-lg font-semibold text-[#e8d5a7]">ZELO</span>
+            <span className="font-serif text-sm font-semibold tracking-[0.18em] text-[#e8d5a7] sm:text-lg sm:tracking-[0.25em]">ZELO</span>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-4">
             {/* Botão Área do Proprietário Translúcido e Harmonioso */}
             <Link to="/proprietario/login">
               <button
                 type="button"
-                className="bg-[#0b2b23]/80 hover:bg-[#10382e] border border-[#c6a35d]/40 text-[#e8d5a7] hover:text-white rounded-full px-5 py-2 text-xs sm:text-sm font-medium transition-all shadow-sm backdrop-blur-sm flex items-center gap-2 cursor-pointer"
+                className="flex h-10 items-center gap-1.5 rounded-full border border-[#c6a35d]/40 bg-[#0b2b23]/80 px-3 text-xs font-medium text-[#e8d5a7] shadow-sm backdrop-blur-sm transition-all hover:bg-[#10382e] hover:text-white sm:h-auto sm:gap-2 sm:px-5 sm:py-2 sm:text-sm"
               >
-                <User className="h-4 w-4 text-[#d8b872]" /> Área do Proprietário
+                <User className="h-4 w-4 shrink-0 text-[#d8b872]" />
+                <span className="sm:hidden">Proprietário</span>
+                <span className="hidden sm:inline">Área do Proprietário</span>
               </button>
             </Link>
             <Link to="/admin/login">
-              <Button variant="ghost" className="text-xs text-stone-400 hover:text-[#e8d5a7] flex items-center gap-1">
-                <Lock className="h-3 w-3" /> Operação
+              <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0 text-stone-400 hover:text-[#e8d5a7] sm:h-auto sm:w-auto sm:px-3">
+                <Lock className="h-4 w-4 sm:h-3 sm:w-3" /> <span className="hidden sm:inline">Operação</span>
               </Button>
             </Link>
           </div>
@@ -62,16 +64,16 @@ export function IndexPage() {
       </header>
 
       {/* Seção Principal */}
-      <main className="flex-1 w-full py-12 md:py-16 relative z-10">
-        <div className="max-w-4xl mx-auto px-6 flex flex-col items-center text-center">
+      <main className="relative z-10 w-full flex-1 py-8 pb-28 sm:py-12 sm:pb-12 md:py-16">
+        <div className="mx-auto flex max-w-4xl flex-col items-center px-4 text-center sm:px-6">
           {/* Logo Centralizada */}
-          <div className="mb-8 relative flex justify-center">
+          <div className="relative mb-6 flex justify-center sm:mb-8">
             <div className="absolute inset-0 bg-[#d8b872]/15 rounded-3xl blur-2xl transform scale-90" />
             <div className="relative inline-block p-1 rounded-3xl bg-[#0a261f] shadow-2xl border border-[#c6a35d]/30">
               <img 
                 src="/zelo-logo.png" 
                 alt="Zelo Concierge & Hospitality" 
-                className="h-40 w-40 md:h-48 md:w-48 object-cover rounded-2xl"
+                className="h-32 w-32 rounded-2xl object-cover sm:h-40 sm:w-40 md:h-48 md:w-48"
                 onError={(e) => {
                   e.currentTarget.src = "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=300&auto=format&fit=crop&q=80";
                 }}
@@ -80,12 +82,12 @@ export function IndexPage() {
           </div>
 
           {/* Título e Tagline */}
-          <div className="space-y-4 max-w-2xl mb-10">
+          <div className="mb-8 max-w-2xl space-y-4 sm:mb-10">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#10382e]/80 border border-[#c6a35d]/25 text-xs font-medium uppercase tracking-[0.2em] text-[#e8d5a7]">
               <Sparkles className="h-3.5 w-3.5 text-[#d8b872]" /> Concierge & Hospitalidade
             </div>
 
-            <h1 className="font-serif text-3xl md:text-5xl lg:text-6xl font-normal tracking-wide text-[#fdfbf7] leading-tight">
+            <h1 className="font-serif text-3xl font-normal leading-tight tracking-wide text-[#fdfbf7] sm:text-4xl md:text-5xl lg:text-6xl">
               Zelo Concierge e Hospitalidade
             </h1>
 
@@ -133,7 +135,7 @@ export function IndexPage() {
         </div>
 
         {/* 3 Cartões de Diferenciais */}
-        <section className="mt-20 w-full px-6">
+        <section className="mt-14 w-full px-4 sm:mt-20 sm:px-6">
           <p className="text-center text-xs text-stone-400 mb-8 font-light tracking-wide">
             Cada área possui acesso restrito e seguro por autenticação.
           </p>
@@ -205,7 +207,7 @@ export function IndexPage() {
         href={WHATSAPP_LINK}
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-[#25D366] hover:bg-[#20ba57] text-white px-4 py-3 rounded-full shadow-2xl transition-all hover:scale-105"
+        className="fixed bottom-20 right-4 z-50 flex items-center gap-2 rounded-full bg-[#25D366] px-4 py-3 text-white shadow-2xl transition-all hover:scale-105 hover:bg-[#20ba57] sm:bottom-6 sm:right-6"
       >
         <MessageCircle className="h-5 w-5 fill-current" />
         <span className="font-semibold text-sm">Atendimento</span>

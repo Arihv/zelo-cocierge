@@ -1,344 +1,73 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
+import { AlertTriangle, Boxes, PackagePlus, Pencil, Search, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { adminNav } from "@/lib/nav";
 import { useMarketStore, type MarketProduct } from "@/hooks/use-market-store";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { 
-  Plus, 
-  Trash2, 
-  Edit3, 
-  Check, 
-  X, 
-  Search, 
-  AlertCircle
-} from "lucide-react";
-import { toast } from "sonner";
+import { Label } from "@/components/ui/label";
 
-export const Route = createFileRoute("/admin/mercado")({
-  component: AdminMercadoPage,
-});
+export const Route = createFileRoute("/admin/mercado")({ component: AdminMercadoPage });
+const money = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 
 export function AdminMercadoPage() {
-  const { products, categories, minOrder, saveProducts, saveMinOrder } = useMarketStore();
-  const [categoriaFiltro, setCategoriaFiltro] = useState("Todas");
-  const [busca, setBusca] = useState("");
-  const [isCreating, setIsCreating] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [newMinOrder, setNewMinOrder] = useState(minOrder);
+  const { products, categories, loading, createProduct, updateProduct, deleteProduct } = useMarketStore();
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("Todas");
+  const [editing, setEditing] = useState<MarketProduct | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  // 1. Atualizar Preço e Estoque
-  const handleUpdateItem = (id: string, newPrice: number, newStock: number) => {
-    if (isNaN(newPrice) || newPrice <= 0 || isNaN(newStock) || newStock < 0) {
-      toast.error("Informe valores válidos para preço e estoque.");
-      return;
-    }
-    const updated = products.map((p) => 
-      p.id === id ? { ...p, price: newPrice, stock: newStock } : p
-    );
-    saveProducts(updated);
-    setEditingId(null);
-    toast.success("Preço e estoque atualizados com sucesso!");
+  const filtered = useMemo(() => products.filter((product) =>
+    (category === "Todas" || product.category === category) && product.name.toLowerCase().includes(search.toLowerCase())), [products, category, search]);
+  const empty = products.filter((product) => product.stock === 0).length;
+  const low = products.filter((product) => product.stock > 0 && product.stock <= 5).length;
+
+  const saveProduct = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const name = String(data.get("name") ?? "").trim();
+    const productCategory = String(data.get("category") ?? "");
+    const price = Number(data.get("price") ?? 0);
+    const stock = Number(data.get("stock") ?? 0);
+    if (!name || !productCategory || price < 0 || stock < 0) { toast.error("Preencha nome, categoria, preço e estoque corretamente."); return; }
+    setSaving(true);
+    try {
+      if (editing) await updateProduct(editing.id, { name, category: productCategory, price, stock });
+      else await createProduct({ name, category: productCategory, price, stock });
+      toast.success(editing ? "Produto atualizado em tempo real." : "Produto adicionado ao estoque.");
+      setEditing(null); setCreating(false);
+    } catch { toast.error("Não foi possível salvar o produto no Supabase."); }
+    setSaving(false);
+  };
+  const removeProduct = async (product: MarketProduct) => {
+    if (!window.confirm(`Remover “${product.name}” do catálogo?`)) return;
+    try { await deleteProduct(product.id); toast.success("Produto removido."); }
+    catch { toast.error("Não foi possível remover o produto."); }
   };
 
-  // 2. Excluir Produto
-  const handleDeleteProduct = (id: string) => {
-    const updated = products.filter((p) => p.id !== id);
-    saveProducts(updated);
-    toast.success("Produto removido do catálogo!");
-  };
-
-  // 3. Adicionar Novo Produto
-  const handleAddProduct = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    const name = String(form.get("name") ?? "").trim();
-    const category = String(form.get("category") ?? categories[0]);
-    const price = Number(form.get("price") ?? 0);
-    const stock = Number(form.get("stock") ?? 0);
-
-    if (!name || price <= 0) {
-      toast.error("Preencha o nome e um preço válido.");
-      return;
-    }
-
-    const newProd: MarketProduct = {
-      id: "prod-" + Date.now(),
-      name,
-      category,
-      price,
-      stock: Math.max(0, stock),
-    };
-
-    saveProducts([newProd, ...products]);
-    setIsCreating(false);
-    toast.success("Novo produto adicionado ao catálogo!");
-  };
-
-  // 4. Salvar Novo Pedido Mínimo
-  const handleSaveMinOrder = () => {
-    saveMinOrder(newMinOrder);
-    toast.success(`Pedido mínimo atualizado para R$ ${newMinOrder.toFixed(2)}!`);
-  };
-
-  const produtosFiltrados = products.filter((p) => {
-    const matchCat = categoriaFiltro === "Todas" || p.category === categoriaFiltro;
-    const matchBusca = p.name.toLowerCase().includes(busca.toLowerCase());
-    return matchCat && matchBusca;
-  });
-
-  return (
-    <DashboardShell
-      nav={adminNav}
-      role="Administrador"
-      logoutTo="/admin/login"
-      title="Gestão do Minimercado & Estoque"
-      subtitle="Defina o estoque real de cada item, gerencie preços e o pedido mínimo da Zelo."
-    >
-      <div className="space-y-6">
-        
-        {/* Painel Superior: Pedido Mínimo e Novo Produto */}
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card className="md:col-span-2 border-border/80 bg-card p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="space-y-1 text-left">
-              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                <AlertCircle className="h-4 w-4 text-primary" />
-                <span>Regra de Pedido Mínimo</span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Valor mínimo exigido no carrinho de Hóspedes.
-              </p>
-            </div>
-            
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <div className="relative flex-1 sm:w-32">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
-                <Input
-                  type="number"
-                  step="0.50"
-                  value={newMinOrder}
-                  onChange={(e) => setNewMinOrder(Number(e.target.value))}
-                  className="pl-8 h-9 text-sm font-bold"
-                />
-              </div>
-              <Button onClick={handleSaveMinOrder} size="sm" className="h-9 cursor-pointer">
-                Salvar
-              </Button>
-            </div>
-          </Card>
-
-          <Button
-            onClick={() => setIsCreating(true)}
-            className="h-full min-h-[56px] rounded-xl flex items-center justify-center gap-2 font-semibold text-sm cursor-pointer"
-          >
-            <Plus className="h-4 w-4" /> Adicionar Produto
-          </Button>
-        </div>
-
-        {/* Modal / Card para Adicionar Produto */}
-        {isCreating && (
-          <Card className="border-primary/40 bg-card p-5 shadow-lg animate-in fade-in-50">
-            <form onSubmit={handleAddProduct} className="space-y-4 text-left">
-              <div className="flex items-center justify-between border-b pb-3">
-                <h3 className="font-semibold text-sm">Novo Item de Mercado</h3>
-                <button
-                  type="button"
-                  onClick={() => setIsCreating(false)}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="grid sm:grid-cols-4 gap-3">
-                <div className="space-y-1 sm:col-span-1">
-                  <label className="text-xs font-medium text-muted-foreground">Nome e Gramatura/Volume</label>
-                  <Input
-                    name="name"
-                    required
-                    placeholder="Ex: Coca-Cola 2L"
-                    className="h-9 text-xs"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-muted-foreground">Categoria</label>
-                  <select
-                    name="category"
-                    className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-                  >
-                    {categories.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-muted-foreground">Preço (R$)</label>
-                  <Input
-                    name="price"
-                    type="number"
-                    step="0.01"
-                    required
-                    placeholder="0.00"
-                    className="h-9 text-xs font-semibold"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-muted-foreground">Estoque Inicial (un)</label>
-                  <Input
-                    name="stock"
-                    type="number"
-                    defaultValue={0}
-                    required
-                    className="h-9 text-xs font-semibold"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsCreating(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button type="submit" size="sm">
-                  Salvar Item
-                </Button>
-              </div>
-            </form>
-          </Card>
-        )}
-
-        {/* Filtros e Busca */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="relative w-full sm:max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Filtrar por nome..."
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-              className="pl-9 h-10 text-xs rounded-xl"
-            />
-          </div>
-
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 w-full sm:w-auto scrollbar-none">
-            {["Todas", ...categories].map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setCategoriaFiltro(c)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors border cursor-pointer ${
-                  categoriaFiltro === c
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-card text-muted-foreground hover:text-foreground border-border"
-                }`}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Listagem de Produtos para Abastecer */}
-        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-          {produtosFiltrados.map((p) => (
-            <Card
-              key={p.id}
-              className="p-3.5 border-border/70 hover:border-primary/40 transition-all flex items-center justify-between gap-3 text-left shadow-sm"
-            >
-              <div className="min-w-0 flex-1 space-y-0.5">
-                <span className="text-[10px] uppercase font-semibold text-primary tracking-wider block">
-                  {p.category}
-                </span>
-                <h4 className="font-medium text-xs text-foreground truncate">{p.name}</h4>
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0">
-                {editingId === p.id ? (
-                  <div className="flex items-center gap-1">
-                    <div className="space-y-1">
-                      <Input
-                        type="number"
-                        step="0.01"
-                        defaultValue={p.price}
-                        id={`price-admin-${p.id}`}
-                        title="Preço (R$)"
-                        placeholder="Preço"
-                        className="w-16 h-7 text-[11px] font-bold px-1"
-                      />
-                      <Input
-                        type="number"
-                        defaultValue={p.stock}
-                        id={`stock-admin-${p.id}`}
-                        title="Estoque (un)"
-                        placeholder="Estoque"
-                        className="w-16 h-7 text-[11px] font-bold px-1"
-                      />
-                    </div>
-                    <Button
-                      size="icon"
-                      className="h-14 w-7 bg-emerald-600 hover:bg-emerald-700 text-white"
-                      onClick={() => {
-                        const priceEl = document.getElementById(
-                          `price-admin-${p.id}`
-                        ) as HTMLInputElement;
-                        const stockEl = document.getElementById(
-                          `stock-admin-${p.id}`
-                        ) as HTMLInputElement;
-                        handleUpdateItem(
-                          p.id, 
-                          Number(priceEl?.value || p.price),
-                          Number(stockEl?.value || p.stock)
-                        );
-                      }}
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="text-right">
-                    <span className="font-serif text-sm font-bold text-foreground block">
-                      R$ {p.price.toFixed(2).replace(".", ",")}
-                    </span>
-                    <span className={`text-[10px] font-medium ${p.stock === 0 ? "text-amber-500" : "text-muted-foreground"}`}>
-                      Estoque: <strong className="text-foreground">{p.stock} un</strong>
-                    </span>
-                  </div>
-                )}
-
-                <div className="flex items-center border-l pl-2 gap-0.5">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 text-muted-foreground hover:text-primary"
-                    onClick={() => setEditingId(editingId === p.id ? null : p.id)}
-                    title="Editar Preço e Estoque"
-                  >
-                    <Edit3 className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                    onClick={() => handleDeleteProduct(p.id)}
-                    title="Excluir Produto"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-
+  return <DashboardShell nav={adminNav} role="Administrador" logoutTo="/admin/login" title="Minimercado & Estoque" subtitle="Cadastre produtos e ajuste o estoque. As alterações são sincronizadas em tempo real.">
+    <div className="mx-auto max-w-6xl space-y-6">
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Card><CardHeader className="flex flex-row items-center justify-between pb-2"><span className="text-sm text-muted-foreground">Itens cadastrados</span><Boxes className="h-4 w-4 text-primary" /></CardHeader><CardContent><div className="text-2xl font-bold">{products.length}</div><p className="mt-1 text-xs text-muted-foreground">Produtos reais no catálogo</p></CardContent></Card>
+        <Card><CardHeader className="flex flex-row items-center justify-between pb-2"><span className="text-sm text-muted-foreground">Sem estoque</span><AlertTriangle className="h-4 w-4 text-amber-600" /></CardHeader><CardContent><div className="text-2xl font-bold text-amber-600">{empty}</div><p className="mt-1 text-xs text-muted-foreground">Indisponíveis para hóspedes</p></CardContent></Card>
+        <Card><CardHeader className="flex flex-row items-center justify-between pb-2"><span className="text-sm text-muted-foreground">Estoque baixo</span><AlertTriangle className="h-4 w-4 text-destructive" /></CardHeader><CardContent><div className="text-2xl font-bold text-destructive">{low}</div><p className="mt-1 text-xs text-muted-foreground">Até 5 unidades</p></CardContent></Card>
       </div>
-    </DashboardShell>
-  );
+
+      <Card className="overflow-hidden"><CardHeader className="border-b bg-primary/5"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><CardTitle className="text-lg">Catálogo de produtos</CardTitle><CardDescription>Comece com o catálogo vazio e adicione apenas os itens que existem no local.</CardDescription></div><Button onClick={() => setCreating(true)} className="gap-2"><PackagePlus className="h-4 w-4" /> Novo produto</Button></div></CardHeader>
+        <CardContent className="space-y-5 p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="relative w-full sm:max-w-xs"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar produto" className="pl-9" /></div><div className="flex max-w-full gap-2 overflow-x-auto pb-1">{["Todas", ...categories].map((item) => <button key={item} type="button" onClick={() => setCategory(item)} className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium ${category === item ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>{item}</button>)}</div></div>
+          {loading ? <div className="py-12 text-center text-sm text-muted-foreground">Carregando estoque…</div> : null}
+          {!loading && filtered.length === 0 ? <div className="rounded-xl border border-dashed p-12 text-center"><Boxes className="mx-auto h-8 w-8 text-muted-foreground" /><h3 className="mt-3 font-semibold">{products.length ? "Nenhum produto encontrado" : "Seu catálogo está vazio"}</h3><p className="mt-1 text-sm text-muted-foreground">{products.length ? "Altere os filtros ou a busca." : "Adicione o primeiro produto com a quantidade real disponível."}</p>{!products.length ? <Button onClick={() => setCreating(true)} className="mt-4">Adicionar primeiro produto</Button> : null}</div> : null}
+          {!loading && filtered.length > 0 ? <div className="grid gap-3 md:grid-cols-2">{filtered.map((product) => <div key={product.id} className="flex items-center justify-between rounded-xl border bg-card p-4 transition-colors hover:border-primary/40"><div className="min-w-0"><p className="text-[11px] font-semibold uppercase tracking-wider text-primary">{product.category}</p><h3 className="truncate font-semibold">{product.name}</h3><p className="mt-1 text-sm text-muted-foreground">{money(product.price)}</p></div><div className="flex items-center gap-3"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${product.stock === 0 ? "bg-amber-500/15 text-amber-700 dark:text-amber-300" : product.stock <= 5 ? "bg-red-500/15 text-red-700 dark:text-red-300" : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"}`}>{product.stock === 0 ? "Esgotado" : `${product.stock} un`}</span><Button variant="ghost" size="icon" onClick={() => setEditing(product)} title="Editar"><Pencil className="h-4 w-4" /></Button><Button variant="ghost" size="icon" onClick={() => void removeProduct(product)} className="text-destructive hover:text-destructive" title="Remover"><Trash2 className="h-4 w-4" /></Button></div></div>)}</div> : null}
+        </CardContent>
+      </Card>
+    </div>
+
+    <Dialog open={creating || Boolean(editing)} onOpenChange={(open) => { if (!open) { setCreating(false); setEditing(null); } }}><DialogContent><DialogHeader><DialogTitle>{editing ? "Editar produto" : "Novo produto"}</DialogTitle></DialogHeader><form onSubmit={saveProduct} className="space-y-4"><div className="space-y-1.5"><Label>Nome</Label><Input name="name" defaultValue={editing?.name} placeholder="Ex.: Água mineral 500 ml" required /></div><div className="space-y-1.5"><Label>Categoria</Label><select name="category" defaultValue={editing?.category ?? categories[0]} className="h-10 w-full rounded-md border bg-background px-3 text-sm">{categories.map((item) => <option key={item}>{item}</option>)}</select></div><div className="grid grid-cols-2 gap-3"><div className="space-y-1.5"><Label>Preço (R$)</Label><Input name="price" type="number" min="0" step="0.01" defaultValue={editing?.price ?? 0} required /></div><div className="space-y-1.5"><Label>Estoque (un.)</Label><Input name="stock" type="number" min="0" step="1" defaultValue={editing?.stock ?? 0} required /></div></div><DialogFooter><Button type="button" variant="outline" onClick={() => { setCreating(false); setEditing(null); }}>Cancelar</Button><Button type="submit" disabled={saving}>{saving ? "Salvando…" : "Salvar produto"}</Button></DialogFooter></form></DialogContent></Dialog>
+  </DashboardShell>;
 }
