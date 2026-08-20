@@ -47,11 +47,11 @@ export function ProprietarioMercadoPage() {
       title="Estoque do Minimercado"
       subtitle="Acompanhe em tempo real a disponibilidade de itens e conveniências abastecidos pela Zelo."
     >
-      <div className="space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6">
         
         {/* Painel Informativo */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Card className="border-border/80 bg-card p-4 flex items-center gap-3.5 shadow-sm text-left">
+          <Card className="flex items-center gap-3.5 border-border/80 bg-card p-5 text-left shadow-sm">
             <div className="p-3 rounded-xl bg-primary/10 text-primary">
               <Boxes className="h-5 w-5" />
             </div>
@@ -61,7 +61,7 @@ export function ProprietarioMercadoPage() {
             </div>
           </Card>
 
-          <Card className="border-border/80 bg-card p-4 flex items-center gap-3.5 shadow-sm text-left">
+          <Card className="flex items-center gap-3.5 border-border/80 bg-card p-5 text-left shadow-sm">
             <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-600">
               <Layers className="h-5 w-5" />
             </div>
@@ -71,7 +71,7 @@ export function ProprietarioMercadoPage() {
             </div>
           </Card>
 
-          <div className="sm:col-span-2 lg:col-span-1 flex items-center gap-2 p-3.5 bg-secondary/80 rounded-xl text-xs text-muted-foreground border text-left">
+          <div className="flex items-center gap-2 rounded-xl border bg-secondary/80 p-5 text-left text-xs text-muted-foreground sm:col-span-2 lg:col-span-1">
             <Info className="h-4 w-4 text-primary shrink-0" />
             <span>
               Visão somente leitura. O abastecimento e a contagem são gerenciados pela equipe Zelo.
@@ -80,7 +80,7 @@ export function ProprietarioMercadoPage() {
         </div>
 
         {/* Filtros e Busca */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <Card className="border-border/80 shadow-sm"><div className="flex flex-col items-center justify-between gap-4 p-4 sm:flex-row">
           <div className="relative w-full sm:max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -88,17 +88,17 @@ export function ProprietarioMercadoPage() {
               placeholder="Buscar item no catálogo..."
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              className="pl-9 h-10 text-xs rounded-xl"
+              className="h-11 rounded-xl pl-9"
             />
           </div>
 
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 w-full sm:w-auto scrollbar-none">
+          <div className="flex w-full items-center gap-1.5 overflow-x-auto pb-1 sm:w-auto scrollbar-none">
             {["Todas", ...categories].map((c) => (
               <button
                 key={c}
                 type="button"
                 onClick={() => setCategoriaAtiva(c)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors border cursor-pointer ${
+                className={`cursor-pointer whitespace-nowrap rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors ${
                   categoriaAtiva === c
                     ? "bg-primary text-primary-foreground border-primary shadow-sm"
                     : "bg-card text-muted-foreground hover:text-foreground border-border"
@@ -108,10 +108,10 @@ export function ProprietarioMercadoPage() {
               </button>
             ))}
           </div>
-        </div>
+        </div></Card>
 
         {/* Grid de Itens */}
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {produtosFiltrados.map((p) => {
             const isZero = p.stock === 0;
             const isLow = p.stock > 0 && p.stock <= 5;
@@ -119,16 +119,16 @@ export function ProprietarioMercadoPage() {
             return (
               <Card 
                 key={p.id} 
-                className="p-4 border-border/80 hover:border-primary/40 transition-all flex flex-col justify-between gap-3 text-left shadow-sm bg-card"
+                className="flex flex-col justify-between gap-4 border-border/80 bg-card p-5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-soft"
               >
                 <div className="space-y-1">
                   <span className="text-[10px] uppercase font-semibold text-primary tracking-wider block">
                     {p.category}
                   </span>
-                  <h4 className="font-medium text-sm text-foreground leading-snug">{p.name}</h4>
+                  <h4 className="text-sm font-semibold leading-snug text-foreground">{p.name}</h4>
                 </div>
 
-                <div className="pt-2 border-t border-border/60 flex items-center justify-between">
+                <div className="flex items-center justify-between border-t border-border/60 pt-3">
                   <div>
                     <span className="text-xs text-muted-foreground block">Valor</span>
                     <span className="font-serif text-base font-bold text-foreground">

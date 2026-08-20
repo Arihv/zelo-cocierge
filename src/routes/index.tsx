@@ -9,7 +9,6 @@ import {
   ArrowRight, 
   User, 
   Lock, 
-  Sparkles, 
   ShieldCheck, 
   Building2 
 } from "lucide-react";
@@ -79,21 +78,6 @@ export function IndexPage() {
                 }}
               />
             </div>
-          </div>
-
-          {/* Título e Tagline */}
-          <div className="mb-8 max-w-2xl space-y-4 sm:mb-10">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#10382e]/80 border border-[#c6a35d]/25 text-xs font-medium uppercase tracking-[0.2em] text-[#e8d5a7]">
-              <Sparkles className="h-3.5 w-3.5 text-[#d8b872]" /> Concierge & Hospitalidade
-            </div>
-
-            <h1 className="font-serif text-3xl font-normal leading-tight tracking-wide text-[#fdfbf7] sm:text-4xl md:text-5xl lg:text-6xl">
-              Zelo Concierge e Hospitalidade
-            </h1>
-
-            <p className="text-stone-300 text-sm md:text-base font-light leading-relaxed max-w-xl mx-auto">
-              Experiência de estadia personalizada, comodidades exclusivas e atendimento premium para seu conforto absoluto.
-            </p>
           </div>
 
           {/* Card Principal: Portal do Hóspede */}
