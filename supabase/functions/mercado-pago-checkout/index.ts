@@ -1,0 +1,39 @@
+import { createClient } from "npm:@supabase/supabase-js@2";
+
+const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type" };
+
+Deno.serve(async (request) => {
+  if (request.method === "OPTIONS") return new Response("ok", { headers: cors });
+  try {
+    const token = request.headers.get("Authorization");
+    if (!token) throw new Error("Sessão ausente.");
+    const userClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: token } } });
+    const { data: { user }, error: userError } = await userClient.auth.getUser();
+    if (userError || !user) throw new Error("Sessão inválida.");
+    const { order_id } = await request.json();
+    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const { data: order, error: orderError } = await admin.from("orders").select("id, user_id, order_number, total, details, payment_status").eq("id", order_id).single();
+    if (orderError || order.user_id !== user.id) throw new Error("Pedido não encontrado.");
+    if (order.payment_status === "approved") throw new Error("Este pedido já foi pago.");
+    const accessToken = Deno.env.get("MERCADO_PAGO_ACCESS_TOKEN");
+    const siteUrl = Deno.env.get("SITE_URL");
+    if (!accessToken || !siteUrl) throw new Error("Pagamento ainda não foi configurado pela administração.");
+    const response = await fetch("https://api.mercadopago.com/checkout/preferences", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        items: [{ title: `Pedido ${order.order_number}`, quantity: 1, unit_price: Number(order.total), currency_id: "BRL" }],
+        external_reference: order.id,
+        notification_url: `${Deno.env.get("SUPABASE_URL")}/functions/v1/mercado-pago-webhook`,
+        back_urls: { success: `${siteUrl}/hospede/historico`, failure: `${siteUrl}/hospede/historico`, pending: `${siteUrl}/hospede/historico` },
+        auto_return: "approved",
+      }),
+    });
+    const preference = await response.json();
+    if (!response.ok) throw new Error(preference.message || "Não foi possível iniciar o pagamento.");
+    await admin.from("orders").update({ payment_provider: "mercado_pago", payment_preference_id: preference.id, payment_status: "pending" }).eq("id", order.id);
+    return Response.json({ checkout_url: preference.init_point }, { headers: { ...cors, "Content-Type": "application/json" } });
+  } catch (error) {
+    return Response.json({ error: error instanceof Error ? error.message : "Erro no pagamento." }, { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
+  }
+});
