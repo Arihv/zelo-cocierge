@@ -23,8 +23,19 @@ export function useMarketStore() {
 
   useEffect(() => {
     void refreshProducts();
-    const channel = supabase.channel("products-live").on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => void refreshProducts()).subscribe();
-    return () => void supabase.removeChannel(channel);
+    const channel = supabase
+      .channel("products-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => void refreshProducts())
+      .subscribe();
+    const interval = window.setInterval(() => void refreshProducts(), 30_000);
+    const refreshOnFocus = () => void refreshProducts();
+    window.addEventListener("focus", refreshOnFocus);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", refreshOnFocus);
+      void supabase.removeChannel(channel);
+    };
   }, [refreshProducts]);
 
   const createProduct = async (product: Omit<MarketProduct, "id">) => {
