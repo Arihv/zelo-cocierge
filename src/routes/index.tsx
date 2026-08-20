@@ -9,6 +9,7 @@ import {
   ArrowRight, 
   User, 
   Lock, 
+  Sparkles,
   ShieldCheck, 
   Building2 
 } from "lucide-react";
