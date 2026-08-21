@@ -55,11 +55,12 @@ export type Database = {
           created_at: string
           daily_rate: number
           description: string | null
-          host_id: string
+          host_id: string | null
           id: string
           is_active: boolean
           max_guests: number
           name: string
+          property_owner_id: string | null
           state: string | null
           updated_at: string
         }
@@ -73,11 +74,12 @@ export type Database = {
           created_at?: string
           daily_rate?: number
           description?: string | null
-          host_id: string
+          host_id?: string | null
           id?: string
           is_active?: boolean
           max_guests?: number
           name: string
+          property_owner_id?: string | null
           state?: string | null
           updated_at?: string
         }
@@ -91,13 +93,32 @@ export type Database = {
           created_at?: string
           daily_rate?: number
           description?: string | null
-          host_id?: string
+          host_id?: string | null
           id?: string
           is_active?: boolean
           max_guests?: number
           name?: string
+          property_owner_id?: string | null
           state?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      property_owners: {
+        Row: {
+          created_at: string
+          full_name: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          full_name: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string
+          id?: string
         }
         Relationships: []
       }
