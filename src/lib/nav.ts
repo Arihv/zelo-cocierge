@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Package, ShoppingBasket, CreditCard, History,
   Home, Sparkles, ClipboardList, Wrench, FileBarChart2,
-  ConciergeBell, Handshake, Users, CalendarRange, Tags, WalletCards
+  ConciergeBell, Handshake, Users, CalendarRange, WalletCards
 } from "lucide-react";
 import type { NavItem } from "@/components/dashboard-shell";
 
@@ -35,7 +35,6 @@ export const adminNav: NavItem[] = [
   { to: "/admin/servicos", label: "Serviços", icon: ConciergeBell },
   { to: "/admin/mercado", label: "Gestão do Mercado", icon: ShoppingBasket },
   { to: "/admin/kits", label: "Kits & Cardápio", icon: Package },
-  { to: "/admin/precos", label: "Tabela de Preços", icon: Tags },
   { to: "/admin/financeiro", label: "Financeiro & Contas", icon: WalletCards },
   { to: "/admin/parcerias", label: "Parcerias", icon: Handshake },
   { to: "/admin/relatorios", label: "Relatórios", icon: FileBarChart2 },
