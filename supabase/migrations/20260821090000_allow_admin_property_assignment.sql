@@ -3,18 +3,18 @@
 DROP POLICY IF EXISTS "Admins can insert apartments" ON public.apartments;
 CREATE POLICY "Admins can insert apartments"
   ON public.apartments FOR INSERT TO authenticated
-  WITH CHECK (public.has_role(auth.uid(), 'admin'));
+  WITH CHECK (public.has_role(auth.uid(), 'admin'::public.app_role));
 
 -- A administração gerencia os dados de exibição e o papel de acesso das contas.
 -- Senhas continuam exclusivamente no Supabase Auth e nunca são expostas aqui.
 DROP POLICY IF EXISTS "Admins can update all profiles" ON public.profiles;
 CREATE POLICY "Admins can update all profiles"
   ON public.profiles FOR UPDATE TO authenticated
-  USING (public.has_role(auth.uid(), 'admin'))
-  WITH CHECK (public.has_role(auth.uid(), 'admin'));
+  USING (public.has_role(auth.uid(), 'admin'::public.app_role))
+  WITH CHECK (public.has_role(auth.uid(), 'admin'::public.app_role));
 
 DROP POLICY IF EXISTS "Admins can update all roles" ON public.user_roles;
 CREATE POLICY "Admins can update all roles"
   ON public.user_roles FOR UPDATE TO authenticated
-  USING (public.has_role(auth.uid(), 'admin'))
-  WITH CHECK (public.has_role(auth.uid(), 'admin'));
+  USING (public.has_role(auth.uid(), 'admin'::public.app_role))
+  WITH CHECK (public.has_role(auth.uid(), 'admin'::public.app_role));
