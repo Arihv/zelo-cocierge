@@ -181,6 +181,7 @@ export function useOwnerOrders() {
 export function useAllOrders() {
   return useQuery({
     queryKey: ["orders", "all"],
+    refetchInterval: 10_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
@@ -225,7 +226,7 @@ export function useNotifications() {
   return useQuery({
     queryKey: ["notifications", user?.id],
     enabled: !!user,
-    refetchInterval: 60_000,
+    refetchInterval: 10_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("notifications")

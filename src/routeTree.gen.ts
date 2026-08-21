@@ -15,6 +15,7 @@ import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
 import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
 import { Route as TermosRouteImport } from './routes/termos'
+import { Route as AdminChamadosRouteImport } from './routes/admin.chamados'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 import { Route as AdminFinanceiroRouteImport } from './routes/admin.financeiro'
 import { Route as AdminImoveisRouteImport } from './routes/admin.imoveis'
@@ -76,6 +77,11 @@ const RedefinirSenhaRoute = RedefinirSenhaRouteImport.update({
 const TermosRoute = TermosRouteImport.update({
   id: '/termos',
   path: '/termos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminChamadosRoute = AdminChamadosRouteImport.update({
+  id: '/admin/chamados',
+  path: '/admin/chamados',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminDashboardRoute = AdminDashboardRouteImport.update({
@@ -247,6 +253,7 @@ export interface FileRoutesByFullPath {
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/termos': typeof TermosRoute
+  '/admin/chamados': typeof AdminChamadosRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/financeiro': typeof AdminFinanceiroRoute
   '/admin/imoveis': typeof AdminImoveisRoute
@@ -287,6 +294,7 @@ export interface FileRoutesByTo {
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/termos': typeof TermosRoute
+  '/admin/chamados': typeof AdminChamadosRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/financeiro': typeof AdminFinanceiroRoute
   '/admin/imoveis': typeof AdminImoveisRoute
@@ -328,6 +336,7 @@ export interface FileRoutesById {
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/termos': typeof TermosRoute
+  '/admin/chamados': typeof AdminChamadosRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/financeiro': typeof AdminFinanceiroRoute
   '/admin/imoveis': typeof AdminImoveisRoute
@@ -370,6 +379,7 @@ export interface FileRouteTypes {
     | '/recuperar-senha'
     | '/redefinir-senha'
     | '/termos'
+    | '/admin/chamados'
     | '/admin/dashboard'
     | '/admin/financeiro'
     | '/admin/imoveis'
@@ -410,6 +420,7 @@ export interface FileRouteTypes {
     | '/recuperar-senha'
     | '/redefinir-senha'
     | '/termos'
+    | '/admin/chamados'
     | '/admin/dashboard'
     | '/admin/financeiro'
     | '/admin/imoveis'
@@ -450,6 +461,7 @@ export interface FileRouteTypes {
     | '/recuperar-senha'
     | '/redefinir-senha'
     | '/termos'
+    | '/admin/chamados'
     | '/admin/dashboard'
     | '/admin/financeiro'
     | '/admin/imoveis'
@@ -491,6 +503,7 @@ export interface RootRouteChildren {
   RecuperarSenhaRoute: typeof RecuperarSenhaRoute
   RedefinirSenhaRoute: typeof RedefinirSenhaRoute
   TermosRoute: typeof TermosRoute
+  AdminChamadosRoute: typeof AdminChamadosRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminFinanceiroRoute: typeof AdminFinanceiroRoute
   AdminImoveisRoute: typeof AdminImoveisRoute
@@ -567,6 +580,13 @@ declare module '@tanstack/react-router' {
       path: '/termos'
       fullPath: '/termos'
       preLoaderRoute: typeof TermosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/chamados': {
+      id: '/admin/chamados'
+      path: '/admin/chamados'
+      fullPath: '/admin/chamados'
+      preLoaderRoute: typeof AdminChamadosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/dashboard': {
@@ -803,6 +823,7 @@ const rootRouteChildren: RootRouteChildren = {
   RecuperarSenhaRoute: RecuperarSenhaRoute,
   RedefinirSenhaRoute: RedefinirSenhaRoute,
   TermosRoute: TermosRoute,
+  AdminChamadosRoute: AdminChamadosRoute,
   AdminDashboardRoute: AdminDashboardRoute,
   AdminFinanceiroRoute: AdminFinanceiroRoute,
   AdminImoveisRoute: AdminImoveisRoute,

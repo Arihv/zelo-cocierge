@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { ownerNav } from "@/lib/nav";
-import { apartments } from "@/lib/mock-data";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useApartments, useCreateOrder } from "@/lib/api";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/proprietario/manutencao")({
   component: MaintPage,
@@ -25,23 +26,66 @@ const priorities = [
 ];
 
 function MaintPage() {
-  const [prio, setPrio] = useState("media");
+  const { profile, user } = useAuth();
+  const { data: apartments = [], isLoading: loadingApartments } = useApartments(true);
+  const createOrder = useCreateOrder();
+  const [priority, setPriority] = useState("media");
+  const [category, setCategory] = useState(categories[0]);
+  const [apartmentId, setApartmentId] = useState("");
+  const [description, setDescription] = useState("");
+  const [scheduledFor, setScheduledFor] = useState("");
+
+  useEffect(() => {
+    if (!apartmentId && apartments[0]) setApartmentId(apartments[0].id);
+  }, [apartmentId, apartments]);
+
+  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const apartment = apartments.find((item) => item.id === apartmentId);
+    if (!apartment) {
+      toast.error("Selecione um apartamento para abrir o chamado.");
+      return;
+    }
+    try {
+      await createOrder.mutateAsync({
+        category: "manutencao",
+        total: 0,
+        apartmentId,
+        scheduledFor: scheduledFor || null,
+        details: JSON.stringify({
+          solicitante: profile?.full_name || user?.email || "Proprietário",
+          perfil: "Proprietário",
+          imovel: apartment.code || apartment.name,
+          categoria: category,
+          descricao: description,
+          prioridade: priorities.find((item) => item.id === priority)?.label || priority,
+          data_desejada: scheduledFor || null,
+        }),
+      });
+      setDescription("");
+      setScheduledFor("");
+      toast.success("Chamado enviado à administração.", { description: "A equipe Zelo recebeu uma notificação e acompanhará o atendimento." });
+    } catch (error) {
+      toast.error("Não foi possível abrir o chamado.", { description: error instanceof Error ? error.message : "Tente novamente em alguns instantes." });
+    }
+  };
+
   return (
     <DashboardShell title="Manutenção" subtitle="Abra um chamado por categoria e prioridade." role="Proprietário" nav={ownerNav} logoutTo="/">
       <Card className="border-border/60 p-6 shadow-elegant max-w-2xl">
         <h3 className="font-serif text-xl font-semibold">Novo chamado</h3>
-        <form className="mt-5 space-y-4" onSubmit={(e) => { e.preventDefault(); toast.success("Chamado aberto."); }}>
-          <div className="grid grid-cols-2 gap-3">
+        {loadingApartments ? <p className="mt-5 text-sm text-muted-foreground">Carregando seus imóveis...</p> : apartments.length === 0 ? <p className="mt-5 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">Nenhum imóvel está vinculado à sua conta. Peça à administração para vincular seu imóvel antes de abrir um chamado.</p> : <form className="mt-5 space-y-4" onSubmit={submit}>
+          <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5"><Label>Categoria</Label>
-              <Select defaultValue="Elétrica">
+              <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                <SelectContent>{categories.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5"><Label>Apartamento</Label>
-              <Select defaultValue={apartments[0]?.code}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{apartments.map((a) => <SelectItem key={a.code} value={a.code}>{a.code}</SelectItem>)}</SelectContent>
+              <Select value={apartmentId} onValueChange={setApartmentId}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>{apartments.map((item) => <SelectItem key={item.id} value={item.id}>{item.code || item.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
           </div>
@@ -49,17 +93,17 @@ function MaintPage() {
             <Label>Prioridade</Label>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {priorities.map((p) => (
-                <button type="button" key={p.id} onClick={() => setPrio(p.id)} className={cn(
+                <button type="button" key={p.id} onClick={() => setPriority(p.id)} className={cn(
                   "rounded-lg border px-3 py-2 text-sm font-medium",
-                  prio === p.id ? p.color + " border-transparent" : "bg-card text-muted-foreground",
+                  priority === p.id ? p.color + " border-transparent" : "bg-card text-muted-foreground",
                 )}>{p.label}</button>
               ))}
             </div>
           </div>
-          <div className="space-y-1.5"><Label>Descrição</Label><Textarea placeholder="Descreva o problema..." required /></div>
-          <div className="space-y-1.5"><Label>Data desejada</Label><Input type="date" /></div>
-          <Button type="submit" className="w-full h-11">Abrir chamado</Button>
-        </form>
+          <div className="space-y-1.5"><Label>Descrição</Label><Textarea value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Descreva o problema..." required /></div>
+          <div className="space-y-1.5"><Label>Data desejada</Label><Input value={scheduledFor} onChange={(event) => setScheduledFor(event.target.value)} type="date" /></div>
+          <Button type="submit" disabled={createOrder.isPending} className="h-11 w-full">{createOrder.isPending ? "Enviando chamado..." : "Abrir chamado"}</Button>
+        </form>}
       </Card>
     </DashboardShell>
   );

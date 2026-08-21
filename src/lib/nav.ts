@@ -32,6 +32,7 @@ export const adminNav: NavItem[] = [
   { to: "/admin/imoveis", label: "Imóveis", icon: Home },
   { to: "/admin/reservas", label: "Reservas", icon: CalendarRange },
   { to: "/admin/pedidos", label: "Pedidos", icon: History },
+  { to: "/admin/chamados", label: "Chamados", icon: Wrench },
   { to: "/admin/servicos", label: "Serviços", icon: ConciergeBell },
   { to: "/admin/mercado", label: "Gestão do Mercado", icon: ShoppingBasket },
   { to: "/admin/kits", label: "Kits & Cardápio", icon: Package },
