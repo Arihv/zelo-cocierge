@@ -216,7 +216,7 @@ export function ProprietarioServicos() {
                       </label>
                       <Input
                         type="text"
-                        placeholder="DIGITE O CÓDIGO (EX: S2207)"
+                        placeholder=""
                         value={currentCode}
                         onChange={(e) => handleCodeChange(servico.id, e.target.value)}
                         className="h-10 uppercase tracking-widest font-mono text-xs"

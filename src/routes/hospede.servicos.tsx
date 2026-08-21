@@ -129,7 +129,7 @@ function HospedeServicosPage() {
                             setCodes((current) => ({ ...current, [service.key]: value }));
                             setUnlocked((current) => ({ ...current, [service.key]: false }));
                           }}
-                          placeholder="EX.: S-102 ou RES-AB12CD"
+                          placeholder=""
                           className="h-9 font-mono text-xs uppercase"
                           disabled={linkReservation.isPending}
                         />
