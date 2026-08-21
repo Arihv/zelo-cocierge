@@ -80,7 +80,7 @@ export function ProprietarioMercadoPage() {
         </div>
 
         {/* Filtros e Busca */}
-        <Card className="border-border/80 shadow-sm"><div className="flex flex-col items-center justify-between gap-4 p-4 sm:flex-row">
+        <Card className="border-border/80 shadow-sm"><div className="flex flex-col items-stretch justify-between gap-4 p-4 sm:flex-row sm:items-center">
           <div className="relative w-full sm:max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -92,7 +92,7 @@ export function ProprietarioMercadoPage() {
             />
           </div>
 
-          <div className="flex w-full items-center gap-1.5 overflow-x-auto pb-1 sm:w-auto scrollbar-none">
+          <div className="flex w-full flex-wrap items-center gap-1.5 sm:w-auto sm:flex-nowrap sm:overflow-x-auto sm:pb-1 scrollbar-none">
             {["Todas", ...categories].map((c) => (
               <button
                 key={c}

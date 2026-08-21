@@ -55,7 +55,7 @@ function HospedeMercadoPage() {
 
           <Card className="border-border/80 shadow-sm"><CardContent className="space-y-4 p-4">
             <div className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input className="h-11 pl-9" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar item no mercado" /></div>
-            <div className="flex gap-2 overflow-x-auto pb-1">{["Todas", ...categories].map((category) => <Button key={category} size="sm" className="shrink-0" variant={selectedCategory === category ? "default" : "outline"} onClick={() => setSelectedCategory(category)}>{category}</Button>)}</div>
+            <div className="flex flex-wrap gap-2 sm:flex-nowrap sm:overflow-x-auto sm:pb-1">{["Todas", ...categories].map((category) => <Button key={category} size="sm" className="shrink-0" variant={selectedCategory === category ? "default" : "outline"} onClick={() => setSelectedCategory(category)}>{category}</Button>)}</div>
           </CardContent></Card>
 
           {loading ? <p className="py-10 text-center text-sm text-muted-foreground">Atualizando catálogo…</p> : null}
