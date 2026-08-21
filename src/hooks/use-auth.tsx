@@ -82,6 +82,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => listener.subscription.unsubscribe();
   }, []);
 
+  // Alterações de papel feitas pela administração precisam valer também para
+  // quem já estava logado em outro dispositivo ou aba.
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const refreshIdentity = () => void refresh();
+    const channel = supabase
+      .channel(`identity-role-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "user_roles", filter: `user_id=eq.${user.id}` },
+        refreshIdentity,
+      )
+      .subscribe();
+
+    window.addEventListener("focus", refreshIdentity);
+    return () => {
+      window.removeEventListener("focus", refreshIdentity);
+      void supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
+
   const value = useMemo<AuthState>(
     () => ({
       user,

@@ -56,6 +56,15 @@ export function DashboardShell({ title, subtitle, role, nav, logoutTo, children 
     }
   }, [loading, user, userRole, role, navigate, logoutTo]);
 
+  const isAllowed = !!userRole && ROLE_ACCESS[role].includes(userRole);
+
+  // Nunca renderiza o conteúdo de outra área enquanto o papel da conta é
+  // conferido. Isso evita que uma rota digitada manualmente exponha a tela
+  // errada por alguns instantes antes do redirecionamento.
+  if (loading || !user || !isAllowed) {
+    return <div className="grid min-h-screen place-items-center bg-background text-sm text-muted-foreground">Verificando acesso…</div>;
+  }
+
   const handleLogout = async () => {
     try {
       await signOut();
