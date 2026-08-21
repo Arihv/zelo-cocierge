@@ -23,7 +23,6 @@ export const ownerNav: NavItem[] = [
   { to: "/proprietario/manutencao", label: "Manutenção", icon: Wrench },
   { to: "/proprietario/pedidos", label: "Histórico de Pedidos", icon: History },
   { to: "/proprietario/parcerias", label: "Parcerias", icon: Handshake },
-  { to: "/proprietario/relatorios", label: "Relatórios", icon: FileBarChart2 },
 ];
 
 export const adminNav: NavItem[] = [
