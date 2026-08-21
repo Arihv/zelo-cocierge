@@ -25,6 +25,7 @@ import { Route as AdminMercadoRouteImport } from './routes/admin.mercado'
 import { Route as AdminParceriasRouteImport } from './routes/admin.parcerias'
 import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
 import { Route as AdminPrecosRouteImport } from './routes/admin.precos'
+import { Route as AdminRelatoriosRouteImport } from './routes/admin.relatorios'
 import { Route as AdminReservasRouteImport } from './routes/admin.reservas'
 import { Route as AdminServicosRouteImport } from './routes/admin.servicos'
 import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
@@ -127,6 +128,11 @@ const AdminPedidosRoute = AdminPedidosRouteImport.update({
 const AdminPrecosRoute = AdminPrecosRouteImport.update({
   id: '/admin/precos',
   path: '/admin/precos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRelatoriosRoute = AdminRelatoriosRouteImport.update({
+  id: '/admin/relatorios',
+  path: '/admin/relatorios',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminReservasRoute = AdminReservasRouteImport.update({
@@ -263,6 +269,7 @@ export interface FileRoutesByFullPath {
   '/admin/parcerias': typeof AdminParceriasRoute
   '/admin/pedidos': typeof AdminPedidosRoute
   '/admin/precos': typeof AdminPrecosRoute
+  '/admin/relatorios': typeof AdminRelatoriosRoute
   '/admin/reservas': typeof AdminReservasRoute
   '/admin/servicos': typeof AdminServicosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
@@ -304,6 +311,7 @@ export interface FileRoutesByTo {
   '/admin/parcerias': typeof AdminParceriasRoute
   '/admin/pedidos': typeof AdminPedidosRoute
   '/admin/precos': typeof AdminPrecosRoute
+  '/admin/relatorios': typeof AdminRelatoriosRoute
   '/admin/reservas': typeof AdminReservasRoute
   '/admin/servicos': typeof AdminServicosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
@@ -346,6 +354,7 @@ export interface FileRoutesById {
   '/admin/parcerias': typeof AdminParceriasRoute
   '/admin/pedidos': typeof AdminPedidosRoute
   '/admin/precos': typeof AdminPrecosRoute
+  '/admin/relatorios': typeof AdminRelatoriosRoute
   '/admin/reservas': typeof AdminReservasRoute
   '/admin/servicos': typeof AdminServicosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
@@ -389,6 +398,7 @@ export interface FileRouteTypes {
     | '/admin/parcerias'
     | '/admin/pedidos'
     | '/admin/precos'
+    | '/admin/relatorios'
     | '/admin/reservas'
     | '/admin/servicos'
     | '/admin/usuarios'
@@ -430,6 +440,7 @@ export interface FileRouteTypes {
     | '/admin/parcerias'
     | '/admin/pedidos'
     | '/admin/precos'
+    | '/admin/relatorios'
     | '/admin/reservas'
     | '/admin/servicos'
     | '/admin/usuarios'
@@ -471,6 +482,7 @@ export interface FileRouteTypes {
     | '/admin/parcerias'
     | '/admin/pedidos'
     | '/admin/precos'
+    | '/admin/relatorios'
     | '/admin/reservas'
     | '/admin/servicos'
     | '/admin/usuarios'
@@ -513,6 +525,7 @@ export interface RootRouteChildren {
   AdminParceriasRoute: typeof AdminParceriasRoute
   AdminPedidosRoute: typeof AdminPedidosRoute
   AdminPrecosRoute: typeof AdminPrecosRoute
+  AdminRelatoriosRoute: typeof AdminRelatoriosRoute
   AdminReservasRoute: typeof AdminReservasRoute
   AdminServicosRoute: typeof AdminServicosRoute
   AdminUsuariosRoute: typeof AdminUsuariosRoute
@@ -650,6 +663,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/precos'
       fullPath: '/admin/precos'
       preLoaderRoute: typeof AdminPrecosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/relatorios': {
+      id: '/admin/relatorios'
+      path: '/admin/relatorios'
+      fullPath: '/admin/relatorios'
+      preLoaderRoute: typeof AdminRelatoriosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/reservas': {
@@ -833,6 +853,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminParceriasRoute: AdminParceriasRoute,
   AdminPedidosRoute: AdminPedidosRoute,
   AdminPrecosRoute: AdminPrecosRoute,
+  AdminRelatoriosRoute: AdminRelatoriosRoute,
   AdminReservasRoute: AdminReservasRoute,
   AdminServicosRoute: AdminServicosRoute,
   AdminUsuariosRoute: AdminUsuariosRoute,

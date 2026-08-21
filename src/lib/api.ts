@@ -167,6 +167,7 @@ export function useOwnerOrders() {
   return useQuery({
     queryKey: ["orders", "owner", user?.id],
     enabled: !!user,
+    refetchInterval: 10_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")

@@ -39,4 +39,5 @@ export const adminNav: NavItem[] = [
   { to: "/admin/precos", label: "Tabela de Preços", icon: Tags },
   { to: "/admin/financeiro", label: "Financeiro & Contas", icon: WalletCards },
   { to: "/admin/parcerias", label: "Parcerias", icon: Handshake },
+  { to: "/admin/relatorios", label: "Relatórios", icon: FileBarChart2 },
 ];
