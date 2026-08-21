@@ -1,10 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { ownerNav } from "@/lib/nav";
 import { useMarketStore } from "@/hooks/use-market-store";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useOwnerCart } from "@/hooks/use-owner-cart";
+import { toast } from "sonner";
 import { 
   Search, 
   Boxes, 
@@ -12,7 +15,9 @@ import {
   AlertTriangle, 
   Info,
   Layers,
-  XCircle
+  XCircle,
+  Plus,
+  ShoppingCart,
 } from "lucide-react";
 
 export const Route = createFileRoute("/proprietario/mercado")({
@@ -24,6 +29,7 @@ const brl = (val: number) =>
 
 export function ProprietarioMercadoPage() {
   const { products, categories } = useMarketStore();
+  const { addItem, itemCount } = useOwnerCart();
   const [categoriaAtiva, setCategoriaAtiva] = useState("Todas");
   const [busca, setBusca] = useState("");
 
@@ -39,16 +45,44 @@ export function ProprietarioMercadoPage() {
     return products.reduce((acc, p) => acc + (p.stock || 0), 0);
   }, [products]);
 
+  const adicionarAoCarrinho = (produto: (typeof products)[number]) => {
+    if (produto.stock <= 0) {
+      toast.error("Este item está esgotado no momento.");
+      return;
+    }
+
+    addItem({
+      id: `market-${produto.id}`,
+      name: produto.name,
+      category: "mercado",
+      unitPrice: produto.price,
+      productId: produto.id,
+    });
+    toast.success(`${produto.name} foi adicionado ao carrinho.`);
+  };
+
   return (
     <DashboardShell
       nav={ownerNav}
       role="Proprietário"
       logoutTo="/proprietario/login"
-      title="Estoque do Minimercado"
-      subtitle="Acompanhe em tempo real a disponibilidade de itens e conveniências abastecidos pela Zelo."
+      title="Minimercado"
+      subtitle="Compre itens para os seus imóveis. O estoque é atualizado em tempo real."
     >
       <div className="mx-auto max-w-6xl space-y-6">
         
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-muted-foreground">
+            Selecione os produtos e informe o imóvel de entrega no carrinho.
+          </p>
+          <Button asChild className="w-full sm:w-auto">
+            <Link to="/proprietario/carrinho">
+              <ShoppingCart className="mr-2 h-4 w-4" />
+              Carrinho ({itemCount})
+            </Link>
+          </Button>
+        </div>
+
         {/* Painel Informativo */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <Card className="flex items-center gap-3.5 border-border/80 bg-card p-5 text-left shadow-sm">
@@ -74,7 +108,7 @@ export function ProprietarioMercadoPage() {
           <div className="flex items-center gap-2 rounded-xl border bg-secondary/80 p-5 text-left text-xs text-muted-foreground sm:col-span-2 lg:col-span-1">
             <Info className="h-4 w-4 text-primary shrink-0" />
             <span>
-              Visão somente leitura. O abastecimento e a contagem são gerenciados pela equipe Zelo.
+              O estoque é controlado pela equipe Zelo. Escolha o imóvel de entrega antes de finalizar.
             </span>
           </div>
         </div>
@@ -128,7 +162,7 @@ export function ProprietarioMercadoPage() {
                   <h4 className="text-sm font-semibold leading-snug text-foreground">{p.name}</h4>
                 </div>
 
-                <div className="flex items-center justify-between border-t border-border/60 pt-3">
+                <div className="flex items-end justify-between gap-3 border-t border-border/60 pt-3">
                   <div>
                     <span className="text-xs text-muted-foreground block">Valor</span>
                     <span className="font-serif text-base font-bold text-foreground">
@@ -136,30 +170,19 @@ export function ProprietarioMercadoPage() {
                     </span>
                   </div>
 
-                  {/* Status do Estoque */}
-                  <div className={`px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1.5 border ${
-                    isZero
-                      ? "bg-stone-500/10 text-stone-500 border-stone-500/20"
-                      : isLow
-                      ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
-                      : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                  }`}>
-                    {isZero ? (
-                      <>
-                        <XCircle className="h-3 w-3" />
-                        <span>Esgotado</span>
-                      </>
-                    ) : isLow ? (
-                      <>
-                        <AlertTriangle className="h-3 w-3" />
-                        <span>{p.stock} un (Baixo)</span>
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 className="h-3 w-3" />
-                        <span>{p.stock} un</span>
-                      </>
-                    )}
+                  <div className="flex flex-col items-end gap-2">
+                    <div className={`px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1.5 border ${
+                      isZero
+                        ? "bg-stone-500/10 text-stone-500 border-stone-500/20"
+                        : isLow
+                        ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                        : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                    }`}>
+                      {isZero ? <><XCircle className="h-3 w-3" /><span>Esgotado</span></> : isLow ? <><AlertTriangle className="h-3 w-3" /><span>{p.stock} un (Baixo)</span></> : <><CheckCircle2 className="h-3 w-3" /><span>{p.stock} un</span></>}
+                    </div>
+                    <Button size="sm" disabled={isZero} onClick={() => adicionarAoCarrinho(p)}>
+                      <Plus className="mr-1 h-4 w-4" /> Adicionar
+                    </Button>
                   </div>
                 </div>
               </Card>

@@ -149,6 +149,7 @@ export function useMyOrders() {
   return useQuery({
     queryKey: ["orders", "mine", user?.id],
     enabled: !!user,
+    refetchInterval: 10_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")

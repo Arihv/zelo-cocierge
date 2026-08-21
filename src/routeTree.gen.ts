@@ -40,6 +40,7 @@ import { Route as HospedeOrganizacaoRouteImport } from './routes/hospede.organiz
 import { Route as HospedeServicosRouteImport } from './routes/hospede.servicos'
 import { Route as HospedeVincularRouteImport } from './routes/hospede.vincular'
 import { Route as ProprietarioApartamentosRouteImport } from './routes/proprietario.apartamentos'
+import { Route as ProprietarioCarrinhoRouteImport } from './routes/proprietario.carrinho'
 import { Route as ProprietarioDashboardRouteImport } from './routes/proprietario.dashboard'
 import { Route as ProprietarioKitsRouteImport } from './routes/proprietario.kits'
 import { Route as ProprietarioLoginRouteImport } from './routes/proprietario.login'
@@ -206,6 +207,11 @@ const ProprietarioApartamentosRoute =
     path: '/proprietario/apartamentos',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ProprietarioCarrinhoRoute = ProprietarioCarrinhoRouteImport.update({
+  id: '/proprietario/carrinho',
+  path: '/proprietario/carrinho',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProprietarioDashboardRoute = ProprietarioDashboardRouteImport.update({
   id: '/proprietario/dashboard',
   path: '/proprietario/dashboard',
@@ -284,6 +290,7 @@ export interface FileRoutesByFullPath {
   '/hospede/servicos': typeof HospedeServicosRoute
   '/hospede/vincular': typeof HospedeVincularRoute
   '/proprietario/apartamentos': typeof ProprietarioApartamentosRoute
+  '/proprietario/carrinho': typeof ProprietarioCarrinhoRoute
   '/proprietario/dashboard': typeof ProprietarioDashboardRoute
   '/proprietario/kits': typeof ProprietarioKitsRoute
   '/proprietario/login': typeof ProprietarioLoginRoute
@@ -326,6 +333,7 @@ export interface FileRoutesByTo {
   '/hospede/servicos': typeof HospedeServicosRoute
   '/hospede/vincular': typeof HospedeVincularRoute
   '/proprietario/apartamentos': typeof ProprietarioApartamentosRoute
+  '/proprietario/carrinho': typeof ProprietarioCarrinhoRoute
   '/proprietario/dashboard': typeof ProprietarioDashboardRoute
   '/proprietario/kits': typeof ProprietarioKitsRoute
   '/proprietario/login': typeof ProprietarioLoginRoute
@@ -369,6 +377,7 @@ export interface FileRoutesById {
   '/hospede/servicos': typeof HospedeServicosRoute
   '/hospede/vincular': typeof HospedeVincularRoute
   '/proprietario/apartamentos': typeof ProprietarioApartamentosRoute
+  '/proprietario/carrinho': typeof ProprietarioCarrinhoRoute
   '/proprietario/dashboard': typeof ProprietarioDashboardRoute
   '/proprietario/kits': typeof ProprietarioKitsRoute
   '/proprietario/login': typeof ProprietarioLoginRoute
@@ -413,6 +422,7 @@ export interface FileRouteTypes {
     | '/hospede/servicos'
     | '/hospede/vincular'
     | '/proprietario/apartamentos'
+    | '/proprietario/carrinho'
     | '/proprietario/dashboard'
     | '/proprietario/kits'
     | '/proprietario/login'
@@ -455,6 +465,7 @@ export interface FileRouteTypes {
     | '/hospede/servicos'
     | '/hospede/vincular'
     | '/proprietario/apartamentos'
+    | '/proprietario/carrinho'
     | '/proprietario/dashboard'
     | '/proprietario/kits'
     | '/proprietario/login'
@@ -497,6 +508,7 @@ export interface FileRouteTypes {
     | '/hospede/servicos'
     | '/hospede/vincular'
     | '/proprietario/apartamentos'
+    | '/proprietario/carrinho'
     | '/proprietario/dashboard'
     | '/proprietario/kits'
     | '/proprietario/login'
@@ -540,6 +552,7 @@ export interface RootRouteChildren {
   HospedeServicosRoute: typeof HospedeServicosRoute
   HospedeVincularRoute: typeof HospedeVincularRoute
   ProprietarioApartamentosRoute: typeof ProprietarioApartamentosRoute
+  ProprietarioCarrinhoRoute: typeof ProprietarioCarrinhoRoute
   ProprietarioDashboardRoute: typeof ProprietarioDashboardRoute
   ProprietarioKitsRoute: typeof ProprietarioKitsRoute
   ProprietarioLoginRoute: typeof ProprietarioLoginRoute
@@ -770,6 +783,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProprietarioApartamentosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/proprietario/carrinho': {
+      id: '/proprietario/carrinho'
+      path: '/proprietario/carrinho'
+      fullPath: '/proprietario/carrinho'
+      preLoaderRoute: typeof ProprietarioCarrinhoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/proprietario/dashboard': {
       id: '/proprietario/dashboard'
       path: '/proprietario/dashboard'
@@ -868,6 +888,7 @@ const rootRouteChildren: RootRouteChildren = {
   HospedeServicosRoute: HospedeServicosRoute,
   HospedeVincularRoute: HospedeVincularRoute,
   ProprietarioApartamentosRoute: ProprietarioApartamentosRoute,
+  ProprietarioCarrinhoRoute: ProprietarioCarrinhoRoute,
   ProprietarioDashboardRoute: ProprietarioDashboardRoute,
   ProprietarioKitsRoute: ProprietarioKitsRoute,
   ProprietarioLoginRoute: ProprietarioLoginRoute,

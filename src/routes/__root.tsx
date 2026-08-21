@@ -15,6 +15,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { GuestCartProvider } from "@/hooks/use-guest-cart";
+import { OwnerCartProvider } from "@/hooks/use-owner-cart";
 
 function NotFoundComponent() {
   return (
@@ -124,10 +125,12 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <GuestCartProvider>
-          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-          <Outlet />
-          <ThemeToggle />
-          <Toaster position="top-right" richColors />
+          <OwnerCartProvider>
+            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+            <Outlet />
+            <ThemeToggle />
+            <Toaster position="top-right" richColors />
+          </OwnerCartProvider>
         </GuestCartProvider>
       </AuthProvider>
     </QueryClientProvider>

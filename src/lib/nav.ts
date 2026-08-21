@@ -19,6 +19,7 @@ export const ownerNav: NavItem[] = [
   { to: "/proprietario/apartamentos", label: "Apartamentos", icon: Home },
   { to: "/proprietario/servicos", label: "Serviços", icon: ConciergeBell },
   { to: "/proprietario/mercado", label: "Mercado", icon: ShoppingBasket },
+  { to: "/proprietario/carrinho", label: "Carrinho", icon: CreditCard },
   { to: "/proprietario/kits", label: "Kits & Cardápio", icon: Package },
   { to: "/proprietario/manutencao", label: "Manutenção", icon: Wrench },
   { to: "/proprietario/pedidos", label: "Histórico de Pedidos", icon: History },
