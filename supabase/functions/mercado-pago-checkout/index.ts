@@ -14,6 +14,7 @@ Deno.serve(async (request) => {
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const { data: order, error: orderError } = await admin.from("orders").select("id, user_id, order_number, total, details, payment_status, category").eq("id", order_id).single();
     if (orderError || order.user_id !== user.id) throw new Error("Pedido não encontrado.");
+    if (order.category === "manutencao") throw new Error("Chamados de manutenção não possuem pagamento online.");
     if (order.payment_status === "approved") throw new Error("Este pedido já foi pago.");
     const accessToken = Deno.env.get("MERCADO_PAGO_ACCESS_TOKEN");
     const siteUrl = Deno.env.get("SITE_URL");

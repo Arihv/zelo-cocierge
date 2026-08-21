@@ -2,3 +2,6 @@ project_id = "nnaracxxxtbqshcwusdq"
 
 [functions.mercado-pago-webhook]
 verify_jwt = false
+
+[functions.monthly-financial-report]
+verify_jwt = false

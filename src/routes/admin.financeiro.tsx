@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 export const Route = createFileRoute("/admin/financeiro")({ component: AdminFinanceiro });
 
 type PaymentStatus = "pending" | "approved" | "rejected" | "cancelled" | null;
+type FinancialRange = "week" | "month";
 type FinancialOrder = {
   id: string;
   total: number | string;
@@ -28,17 +29,30 @@ const paymentInfo: Record<NonNullable<PaymentStatus>, { label: string; className
 };
 
 const categoryLabel = (category: string) =>
-  ({ kit: "Kit", mercado: "Mercado", manutencao: "Manutenção", servico: "Serviço" })[category] ?? "Pedido";
+  ({ kit: "Kit", mercado: "Mercado", limpeza: "Limpeza", organizacao: "Organização", servico: "Serviço" })[category] ?? "Pedido";
+
+function periodStart(range: FinancialRange) {
+  const start = new Date();
+  if (range === "week") start.setDate(start.getDate() - 6);
+  else start.setDate(1);
+  start.setHours(0, 0, 0, 0);
+  return start;
+}
 
 export function AdminFinanceiro() {
   const [orders, setOrders] = useState<FinancialOrder[]>([]);
+  const [range, setRange] = useState<FinancialRange>("month");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const loadOrders = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const { data, error: queryError } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
+    const { data, error: queryError } = await supabase
+      .from("orders")
+      .select("*")
+      .neq("category", "manutencao")
+      .order("created_at", { ascending: false });
     if (queryError) {
       setError("Não foi possível carregar os dados financeiros.");
     } else {
@@ -58,15 +72,20 @@ export function AdminFinanceiro() {
     return () => void supabase.removeChannel(channel);
   }, [loadOrders]);
 
+  const visibleOrders = useMemo(() => {
+    const start = periodStart(range);
+    return orders.filter((order) => order.category !== "manutencao" && new Date(order.created_at) >= start);
+  }, [orders, range]);
+
   const summary = useMemo(() => {
-    const approved = orders.filter((order) => order.payment_status === "approved");
-    const pending = orders.filter((order) => order.payment_status === "pending");
+    const approved = visibleOrders.filter((order) => order.payment_status === "approved");
+    const pending = visibleOrders.filter((order) => order.payment_status === "pending");
     return {
       approvedTotal: approved.reduce((total, order) => total + Number(order.total || 0), 0),
       approvedCount: approved.length,
       pendingCount: pending.length,
     };
-  }, [orders]);
+  }, [visibleOrders]);
 
   return (
     <DashboardShell nav={adminNav} role="Administrador" logoutTo="/admin/login" title="Financeiro & Contas" subtitle="Acompanhe somente valores confirmados pelo Mercado Pago.">
@@ -108,18 +127,24 @@ export function AdminFinanceiro() {
           <CardHeader className="flex flex-row items-start justify-between gap-4">
             <div>
               <CardTitle className="text-lg">Extrato de pagamentos</CardTitle>
-              <CardDescription>Um pedido só entra como receita após a aprovação registrada pelo Mercado Pago.</CardDescription>
+              <CardDescription>Somente compras aprovadas pelo Mercado Pago entram como receita.</CardDescription>
             </div>
-            <Button variant="outline" size="sm" onClick={() => void loadOrders()} disabled={loading} className="gap-2">
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Atualizar
-            </Button>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <div className="flex rounded-md border p-0.5">
+                <Button size="sm" variant={range === "week" ? "default" : "ghost"} onClick={() => setRange("week")}>Semanal</Button>
+                <Button size="sm" variant={range === "month" ? "default" : "ghost"} onClick={() => setRange("month")}>Mensal</Button>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => void loadOrders()} disabled={loading} className="gap-2">
+                <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Atualizar
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {error ? <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{error}</div> : null}
             {!error && loading ? <div className="py-8 text-center text-sm text-muted-foreground">Carregando pagamentos…</div> : null}
-            {!error && !loading && orders.length === 0 ? <div className="py-8 text-center text-sm text-muted-foreground">Nenhum pedido registrado ainda.</div> : null}
-            {!error && !loading && orders.length > 0 ? <div className="divide-y">
-              {orders.map((order) => {
+            {!error && !loading && visibleOrders.length === 0 ? <div className="py-8 text-center text-sm text-muted-foreground">Nenhum pagamento encontrado neste período.</div> : null}
+            {!error && !loading && visibleOrders.length > 0 ? <div className="divide-y">
+              {visibleOrders.map((order) => {
                 const info = paymentInfo[order.payment_status ?? "pending"];
                 return <div key={order.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
@@ -132,6 +157,10 @@ export function AdminFinanceiro() {
             </div> : null}
           </CardContent>
         </Card>
+
+        <div className="rounded-xl border border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+          Chamados de manutenção são operacionais: não geram cobrança e não entram no extrato ou nos indicadores financeiros.
+        </div>
 
         <div className="flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">
           <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
