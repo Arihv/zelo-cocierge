@@ -1,6 +1,7 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Bell, Menu, LogOut, type LucideIcon } from "lucide-react";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from "./ui/sheet";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
@@ -36,6 +37,7 @@ interface Props {
 
 export function DashboardShell({ title, subtitle, role, nav, logoutTo, children }: Props) {
   const [open, setOpen] = useState(false);
+  const accessWarningShown = useRef(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const { user, profile, role: userRole, loading, signOut } = useAuth();
@@ -52,6 +54,12 @@ export function DashboardShell({ title, subtitle, role, nav, logoutTo, children 
     }
     const allowedRoles = ROLE_ACCESS[role];
     if (userRole && allowedRoles && !allowedRoles.includes(userRole)) {
+      if (!accessWarningShown.current) {
+        accessWarningShown.current = true;
+        toast.error("Acesso não permitido", {
+          description: "Esta área não está disponível para o papel da sua conta.",
+        });
+      }
       navigate({ to: dashboardPathFor(userRole), replace: true });
     }
   }, [loading, user, userRole, role, navigate, logoutTo]);
