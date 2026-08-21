@@ -1,294 +1,152 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
-import { 
-  Plus, 
-  Trash2, 
-  Edit3, 
-  ShieldCheck, 
-  Lock, 
-  Sparkles,
-  Check,
-  X
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useQuery } from "@tanstack/react-query";
+import { Edit2, Eye, EyeOff, Plus, Save, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
+import { DashboardShell } from "@/components/dashboard-shell";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/integrations/supabase/client";
+import { adminNav } from "@/lib/nav";
 
-export const Route = createFileRoute("/admin/servicos")({
-  component: AdminServicosPage,
-});
+export const Route = createFileRoute("/admin/servicos")({ component: AdminServicos });
 
-interface ServiceAdminItem {
-  id: string;
-  title: string;
-  description: string;
-  basePrice: number;
-  requiresAuthCode: boolean;
-  showWhatsAppWarning: boolean;
-  isCleaningDynamic?: boolean;
-}
+const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const slug = (text: string) => text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+const categories = [["servico", "Serviço"], ["limpeza", "Limpeza"], ["organizacao", "Organização"], ["manutencao", "Manutenção"], ["operacional", "Operacional"]] as const;
+type Service = any;
 
-const DEFAULT_ADMIN_SERVICES: ServiceAdminItem[] = [
-  {
-    id: "manta-microfibra",
-    title: "Aluguel de Manta de Microfibra Extra",
-    description: "Manta de microfibra de qualidade para conforto adicional",
-    basePrice: 25.0,
-    requiresAuthCode: true,
-    showWhatsAppWarning: true,
-  },
-  {
-    id: "aquecedor-portatil",
-    title: "Aluguel de Mini Aquecedores Portáteis",
-    description: "Mini aquecedor portátil de segurança",
-    basePrice: 30.0,
-    requiresAuthCode: true,
-    showWhatsAppWarning: true,
-  },
-  {
-    id: "travesseiro-extra",
-    title: "Aluguel de Travesseiros Extras",
-    description: "Travesseiro extra de qualidade",
-    basePrice: 15.0,
-    requiresAuthCode: true,
-    showWhatsAppWarning: true,
-  },
-  {
-    id: "limpeza-extra",
-    title: "Limpeza Extra (S: 190 | D: 280 | T: 330)",
-    description: "Higienização completa identificada automaticamente por código de tipologia",
-    basePrice: 190.0,
-    requiresAuthCode: true,
-    showWhatsAppWarning: false,
-    isCleaningDynamic: true,
-  },
-];
+function AdminServicos() {
+  const { data: services = [], refetch: refreshServices } = useQuery({
+    queryKey: ["admin-service-catalog"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("service_catalog").select("*").order("sort_order").order("name");
+      if (error) throw error;
+      return (data ?? []) as Service[];
+    },
+  });
+  const { data: pricing = [], refetch: refreshPricing } = useQuery({
+    queryKey: ["admin-service-pricing"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("pricing").select("*");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
-export function AdminServicosPage() {
-  const [services, setServices] = useState<ServiceAdminItem[]>(DEFAULT_ADMIN_SERVICES);
-  const [isCreating, setIsCreating] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<Service | null>(null);
+  const [name, setName] = useState("");
+  const [key, setKey] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("servico");
+  const [audience, setAudience] = useState("guest");
+  const [unit, setUnit] = useState("serviço");
+  const [sortOrder, setSortOrder] = useState("10");
+  const [active, setActive] = useState(true);
+  const [priceByProperty, setPriceByProperty] = useState(false);
+  const [flatPrice, setFlatPrice] = useState("");
+  const [priceS, setPriceS] = useState("");
+  const [priceD, setPriceD] = useState("");
+  const [priceT, setPriceT] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  const handleAddService = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    const title = String(form.get("title") ?? "");
-    const description = String(form.get("description") ?? "");
-    const basePrice = Number(form.get("basePrice") ?? 0);
-    const requiresAuthCode = form.get("requiresAuthCode") === "on";
-    const showWhatsAppWarning = form.get("showWhatsAppWarning") === "on";
-
-    const newService: ServiceAdminItem = {
-      id: "srv-" + Date.now(),
-      title,
-      description,
-      basePrice,
-      requiresAuthCode,
-      showWhatsAppWarning,
-    };
-
-    setServices((prev) => [newService, ...prev]);
-    setIsCreating(false);
-    toast.success("Serviço cadastrado com sucesso!");
+  const open = (service?: Service) => {
+    setEditing(service ?? { id: null });
+    setName(service?.name ?? "");
+    setKey(service?.key ?? "");
+    setDescription(service?.description ?? "");
+    setCategory(service?.category ?? "servico");
+    setAudience(service?.audience ?? "guest");
+    setUnit(service?.unit ?? "serviço");
+    setSortOrder(String(service?.sort_order ?? services.length + 1));
+    setActive(service?.is_active ?? true);
+    setPriceByProperty(service?.price_by_property ?? false);
+    setFlatPrice(String(pricing.find((row: any) => row.service_key === service?.key && row.property_type === null)?.price ?? ""));
+    setPriceS(String(pricing.find((row: any) => row.service_key === service?.key && row.property_type === "S")?.price ?? ""));
+    setPriceD(String(pricing.find((row: any) => row.service_key === service?.key && row.property_type === "D")?.price ?? ""));
+    setPriceT(String(pricing.find((row: any) => row.service_key === service?.key && row.property_type === "T")?.price ?? ""));
   };
 
-  const handleDelete = (id: string) => {
-    setServices((prev) => prev.filter((s) => s.id !== id));
-    toast.success("Serviço removido da plataforma");
+  const priceNumber = (raw: string) => Number(raw.replace(",", "."));
+  const savePrice = async (serviceKey: string, propertyType: "S" | "D" | "T" | null, rawValue: string) => {
+    const value = priceNumber(rawValue);
+    if (!Number.isFinite(value) || value < 0) throw new Error("Informe preços válidos.");
+    const existing = pricing.find((row: any) => row.service_key === serviceKey && row.property_type === propertyType) as any;
+    const query = existing
+      ? (supabase as any).from("pricing").update({ price: value }).eq("id", existing.id)
+      : (supabase as any).from("pricing").insert({ service_key: serviceKey, property_type: propertyType, price: value });
+    const { error } = await query;
+    if (error) throw error;
   };
 
-  const handleUpdatePrice = (id: string, newPrice: number) => {
-    setServices((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, basePrice: newPrice } : s))
-    );
-    setEditingId(null);
-    toast.success("Preço atualizado!");
+  const save = async () => {
+    const serviceKey = (editing?.key || key || slug(name)).trim();
+    if (!name.trim()) return toast.error("Informe o nome do serviço.");
+    if (!serviceKey || !/^[a-z0-9_]+$/.test(serviceKey)) return toast.error("Use apenas letras minúsculas, números e _ no identificador.");
+    setSaving(true);
+    try {
+      const payload = { key: serviceKey, name: name.trim(), description: description.trim() || null, category, audience, unit: unit.trim() || "serviço", sort_order: Number(sortOrder) || 0, is_active: active, price_by_property: priceByProperty, icon: "sparkles" };
+      const { error: serviceError } = editing?.id
+        ? await (supabase as any).from("service_catalog").update(payload).eq("id", editing.id)
+        : await (supabase as any).from("service_catalog").insert(payload);
+      if (serviceError) throw serviceError;
+      if (priceByProperty) {
+        const { error } = await (supabase as any).from("pricing").delete().eq("service_key", serviceKey).is("property_type", null);
+        if (error) throw error;
+        await Promise.all([savePrice(serviceKey, "S", priceS), savePrice(serviceKey, "D", priceD), savePrice(serviceKey, "T", priceT)]);
+      } else {
+        const { error } = await (supabase as any).from("pricing").delete().eq("service_key", serviceKey).not("property_type", "is", null);
+        if (error) throw error;
+        await savePrice(serviceKey, null, flatPrice);
+      }
+      await Promise.all([refreshServices(), refreshPricing()]);
+      setEditing(null);
+      toast.success("Serviço salvo no catálogo da plataforma.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível salvar o serviço.");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  return (
-    <div className="min-h-screen bg-[#051a14] text-[#f4efe6] p-6 lg:p-12 font-sans selection:bg-[#d8b872] selection:text-black">
-      <div className="max-w-4xl mx-auto space-y-8">
-        {/* Cabeçalho do Admin */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[#c6a35d]/20 pb-6">
-          <div className="space-y-1">
-            <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-[#d8b872]">
-              <ShieldCheck className="h-4 w-4" /> Gestão Operacional
-            </div>
-            <h1 className="font-serif text-3xl text-white">Painel de Serviços</h1>
-          </div>
+  const toggleActive = async (service: Service) => {
+    const { error } = await (supabase as any).from("service_catalog").update({ is_active: !service.is_active }).eq("id", service.id);
+    if (error) toast.error(error.message); else { await refreshServices(); toast.success(service.is_active ? "Serviço ocultado." : "Serviço publicado."); }
+  };
+  const remove = async (service: Service) => {
+    if (!window.confirm(`Excluir o serviço “${service.name}”? Essa ação não pode ser desfeita.`)) return;
+    const { error } = await (supabase as any).from("service_catalog").delete().eq("id", service.id);
+    if (error) toast.error(error.message); else { await Promise.all([refreshServices(), refreshPricing()]); toast.success("Serviço excluído."); }
+  };
 
-          <Button
-            onClick={() => setIsCreating(true)}
-            className="bg-gradient-to-r from-[#d8b872] to-[#b38f46] text-[#081f19] font-semibold text-xs uppercase tracking-wider rounded-xl h-11 px-5 shadow-lg hover:brightness-105 cursor-pointer"
-          >
-            <Plus className="h-4 w-4 mr-1.5" /> Novo Serviço
-          </Button>
-        </div>
-
-        {/* Modal / Formulário de Cadastro Rápido */}
-        {isCreating && (
-          <form
-            onSubmit={handleAddService}
-            className="bg-[#0b2b23] border border-[#c6a35d]/40 rounded-2xl p-6 space-y-4 shadow-2xl text-left"
-          >
-            <div className="flex items-center justify-between border-b border-stone-700/50 pb-3">
-              <h3 className="font-serif text-lg text-[#e8d5a7]">Adicionar Novo Serviço</h3>
-              <button
-                type="button"
-                onClick={() => setIsCreating(false)}
-                className="text-stone-400 hover:text-white"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs text-stone-300">Título do Serviço</label>
-                <Input
-                  name="title"
-                  required
-                  placeholder="Ex: Aluguel de Toalhas Extras"
-                  className="bg-[#081f19] border-stone-700 rounded-xl text-white"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs text-stone-300">Preço Base (R$)</label>
-                <Input
-                  name="basePrice"
-                  type="number"
-                  step="0.01"
-                  required
-                  placeholder="0.00"
-                  className="bg-[#081f19] border-stone-700 rounded-xl text-white"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs text-stone-300">Descrição</label>
-              <Input
-                name="description"
-                required
-                placeholder="Detalhes para o hóspede ou proprietário..."
-                className="bg-[#081f19] border-stone-700 rounded-xl text-white"
-              />
-            </div>
-
-            <div className="flex flex-wrap gap-6 pt-2 text-xs">
-              <label className="flex items-center gap-2 cursor-pointer text-stone-300">
-                <input
-                  type="checkbox"
-                  name="requiresAuthCode"
-                  defaultChecked
-                  className="rounded border-stone-600 accent-[#c6a35d]"
-                />
-                Exigir Código de Reserva/Autorização
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer text-stone-300">
-                <input
-                  type="checkbox"
-                  name="showWhatsAppWarning"
-                  defaultChecked
-                  className="rounded border-stone-600 accent-[#c6a35d]"
-                />
-                Exibir Aviso do WhatsApp
-              </label>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setIsCreating(false)}
-                className="text-stone-400 hover:text-white"
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                className="bg-[#c6a35d] text-[#081f19] font-semibold rounded-xl"
-              >
-                Salvar Serviço
-              </Button>
-            </div>
-          </form>
-        )}
-
-        {/* Listagem dos Serviços Ativos */}
-        <div className="space-y-3">
-          {services.map((item) => (
-            <div
-              key={item.id}
-              className="bg-[#0c2e25] border border-[#c6a35d]/20 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-md text-left"
-            >
-              <div className="space-y-1 flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-serif text-lg text-white font-medium">{item.title}</h3>
-                  {item.requiresAuthCode && (
-                    <span className="bg-[#10382e] border border-[#c6a35d]/30 text-[#e8d5a7] text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1">
-                      <Lock className="h-2.5 w-2.5" /> Requer Código
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-stone-400 font-light">{item.description}</p>
-              </div>
-
-              <div className="flex items-center gap-4 shrink-0">
-                {editingId === item.id ? (
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      defaultValue={item.basePrice}
-                      id={`price-${item.id}`}
-                      className="w-24 h-9 bg-[#081f19] border-stone-600 rounded-lg text-white text-xs"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const el = document.getElementById(
-                          `price-${item.id}`
-                        ) as HTMLInputElement;
-                        handleUpdatePrice(item.id, Number(el?.value || item.basePrice));
-                      }}
-                      className="p-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500"
-                    >
-                      <Check className="h-4 w-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="text-right">
-                    <span className="font-serif text-lg text-[#d8b872] font-semibold block">
-                      R$ {item.basePrice.toFixed(2).replace(".", ",")}
-                    </span>
-                  </div>
-                )}
-
-                <div className="flex items-center gap-1 border-l border-stone-700/60 pl-3">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setEditingId(editingId === item.id ? null : item.id)
-                    }
-                    className="p-2 text-stone-400 hover:text-[#d8b872] transition-colors"
-                    title="Editar Preço"
-                  >
-                    <Edit3 className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(item.id)}
-                    className="p-2 text-stone-400 hover:text-red-400 transition-colors"
-                    title="Excluir Serviço"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+  return <DashboardShell nav={adminNav} role="Administrador" logoutTo="/admin/login" title="Gestão de serviços" subtitle="Cadastre, edite, publique ou exclua os serviços exibidos na plataforma.">
+    <div className="mx-auto max-w-6xl space-y-6 text-left">
+      <Card className="border-primary/15 bg-muted/30"><CardContent className="p-5 text-sm text-muted-foreground">Tudo o que for salvo aqui usa o catálogo real. Serviços ativos aparecem para o público selecionado; os ocultos ficam guardados para a administração.</CardContent></Card>
+      <div className="flex justify-end"><Button onClick={() => open()}><Plus className="mr-2 h-4 w-4" />Adicionar serviço</Button></div>
+      <div className="grid gap-4 md:grid-cols-2">
+        {services.map((service: Service) => {
+          const flat = pricing.find((row: any) => row.service_key === service.key && row.property_type === null) as any;
+          const prices = ["S", "D", "T"].map((type) => pricing.find((row: any) => row.service_key === service.key && row.property_type === type) as any);
+          return <Card key={service.id} className={!service.is_active ? "opacity-70" : ""}><CardHeader><div className="flex justify-between gap-3"><div><CardTitle className="text-base">{service.name}</CardTitle><CardDescription className="mt-1">{service.description || "Sem descrição"}</CardDescription></div><Badge variant={service.is_active ? "outline" : "secondary"}>{service.is_active ? "Publicado" : "Oculto"}</Badge></div></CardHeader><CardContent className="space-y-4 border-t pt-4"><div className="flex flex-wrap gap-2 text-xs text-muted-foreground"><span>{service.category}</span><span>•</span><span>{service.audience === "all" ? "Hóspedes e proprietários" : service.audience === "host" ? "Proprietários" : "Hóspedes"}</span><span>•</span><span>{service.unit}</span></div><strong>{service.price_by_property ? `S ${brl(Number(prices[0]?.price ?? 0))} · D ${brl(Number(prices[1]?.price ?? 0))} · T ${brl(Number(prices[2]?.price ?? 0))}` : brl(Number(flat?.price ?? 0))}</strong><div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => open(service)}><Edit2 className="mr-1 h-3.5 w-3.5" />Editar</Button><Button size="sm" variant="outline" onClick={() => void toggleActive(service)}>{service.is_active ? <EyeOff className="mr-1 h-3.5 w-3.5" /> : <Eye className="mr-1 h-3.5 w-3.5" />}{service.is_active ? "Ocultar" : "Publicar"}</Button><Button size="icon" variant="ghost" className="text-destructive" onClick={() => void remove(service)} aria-label={`Excluir ${service.name}`}><Trash2 className="h-4 w-4" /></Button></div></CardContent></Card>;
+        })}
       </div>
+      {services.length === 0 && <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">Nenhum serviço cadastrado. Use “Adicionar serviço” para começar.</CardContent></Card>}
     </div>
-  );
+    <Dialog open={!!editing} onOpenChange={(isOpen) => !isOpen && setEditing(null)}><DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl"><DialogHeader><DialogTitle>{editing?.id ? "Editar serviço" : "Novo serviço"}</DialogTitle></DialogHeader><div className="grid gap-4 py-2 sm:grid-cols-2">
+      <div className="sm:col-span-2"><Label>Nome do serviço</Label><Input value={name} onChange={(event) => { setName(event.target.value); if (!editing?.id) setKey(slug(event.target.value)); }} placeholder="Ex.: Aluguel de toalhas extras" /></div>
+      <div><Label>Identificador interno</Label><Input value={editing?.id ? editing.key : key} disabled={!!editing?.id} onChange={(event) => setKey(slug(event.target.value))} placeholder="aluguel_toalhas" /><p className="mt-1 text-xs text-muted-foreground">Usado pela plataforma e não muda depois de criado.</p></div>
+      <div><Label>Categoria</Label><select className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={category} onChange={(event) => setCategory(event.target.value)}>{categories.map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></div>
+      <div><Label>Exibir para</Label><select className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={audience} onChange={(event) => setAudience(event.target.value)}><option value="guest">Hóspedes</option><option value="host">Proprietários</option><option value="all">Hóspedes e proprietários</option></select></div>
+      <div><Label>Unidade de cobrança</Label><Input value={unit} onChange={(event) => setUnit(event.target.value)} placeholder="serviço" /></div><div><Label>Ordem de exibição</Label><Input inputMode="numeric" value={sortOrder} onChange={(event) => setSortOrder(event.target.value)} /></div>
+      <div className="flex items-end gap-3 pb-2"><Switch checked={active} onCheckedChange={setActive} id="active-service" /><Label htmlFor="active-service">Publicar agora</Label></div>
+      <div className="sm:col-span-2"><Label>Descrição</Label><Textarea value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Explique o que está incluído no serviço." rows={3} /></div>
+      <div className="sm:col-span-2 rounded-lg border p-4"><div className="flex items-center justify-between gap-4"><div><Label htmlFor="price-by-property">Preço por tipologia (S, D e T)</Label><p className="mt-1 text-xs text-muted-foreground">Ative para definir valores diferentes conforme a tipologia do imóvel.</p></div><Switch checked={priceByProperty} onCheckedChange={setPriceByProperty} id="price-by-property" /></div>{priceByProperty ? <div className="mt-4 grid gap-3 sm:grid-cols-3"><div><Label>Preço S (R$)</Label><Input inputMode="decimal" value={priceS} onChange={(event) => setPriceS(event.target.value)} /></div><div><Label>Preço D (R$)</Label><Input inputMode="decimal" value={priceD} onChange={(event) => setPriceD(event.target.value)} /></div><div><Label>Preço T (R$)</Label><Input inputMode="decimal" value={priceT} onChange={(event) => setPriceT(event.target.value)} /></div></div> : <div className="mt-4"><Label>Preço único (R$)</Label><Input inputMode="decimal" value={flatPrice} onChange={(event) => setFlatPrice(event.target.value)} /></div>}</div>
+    </div><DialogFooter><Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button><Button onClick={() => void save()} disabled={saving}><Save className="mr-2 h-4 w-4" />{saving ? "Salvando…" : "Salvar serviço"}</Button></DialogFooter></DialogContent></Dialog>
+  </DashboardShell>;
 }

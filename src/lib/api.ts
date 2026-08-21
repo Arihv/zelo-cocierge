@@ -80,7 +80,9 @@ export function useServices(audience?: "guest" | "host") {
     queryKey: ["services", audience ?? "all"],
     queryFn: async () => {
       let q = supabase.from("service_catalog").select("*").eq("is_active", true).order("sort_order");
-      if (audience) q = q.eq("audience", audience);
+  // "all" is managed by the administration for services that must be visible
+  // to both guests and property owners.
+  if (audience) q = q.in("audience", [audience, "all"]);
       const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as unknown as ServiceRow[];
