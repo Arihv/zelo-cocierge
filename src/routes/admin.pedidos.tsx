@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAllOrders, useOrderItems, useUpdateOrderStatus, type OrderRow } from "@/lib/api";
 import { brl, formatDateTime, orderCategoryLabels, orderStatusLabels, orderStatuses, statusTone } from "@/lib/orders";
@@ -23,7 +22,6 @@ function displayDate(value: string) { if (!value) return "—"; const [year, mon
 function AdminPedidos() {
   const { data: orders = [], isLoading } = useAllOrders();
   const updateStatus = useUpdateOrderStatus();
-  const { toast } = useToast();
   const [selected, setSelected] = useState<OrderRow | null>(null);
   const [chargingId, setChargingId] = useState<string | null>(null);
   const { data: items = [], isLoading: itemsLoading } = useOrderItems(selected?.id);
@@ -31,8 +29,8 @@ function AdminPedidos() {
   const cobrarNovamente = async (order: OrderRow) => {
     if (order.payment_status === "approved") return;
     setChargingId(order.id);
-    try { const { data, error } = await supabase.functions.invoke("mercado-pago-checkout", { body: { order_id: order.id } }); if (error) throw error; if (!data?.checkout_url) throw new Error(data?.error || "Não foi possível gerar a cobrança."); toast({ title: "Cobrança gerada", description: `O link de pagamento do pedido ${order.order_number} foi criado no Mercado Pago.` }); window.location.assign(data.checkout_url); }
-    catch (error) { toast({ title: "Não foi possível gerar a cobrança", description: error instanceof Error ? error.message : "Tente novamente.", variant: "destructive" }); }
+    try { const { data, error } = await supabase.functions.invoke("mercado-pago-checkout", { body: { order_id: order.id } }); if (error) throw error; if (!data?.checkout_url) throw new Error(data?.error || "Não foi possível gerar a cobrança."); window.location.assign(data.checkout_url); }
+    catch (error) { window.alert(`Não foi possível gerar a cobrança.\n\n${error instanceof Error ? error.message : "Tente novamente."}`); }
     finally { setChargingId(null); }
   };
   return <DashboardShell nav={adminNav} role="Administrador" logoutTo="/admin/login" title="Pedidos & Cobranças" subtitle="Acompanhe os pedidos, pagamentos e tenha o comprovante completo de cada venda.">
