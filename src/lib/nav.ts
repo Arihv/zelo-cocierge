@@ -11,6 +11,7 @@ export const guestNav: NavItem[] = [
   { to: "/hospede/kits", label: "Kits", icon: Package },
   { to: "/hospede/mercado", label: "Mercado", icon: ShoppingBasket },
   { to: "/hospede/carrinho", label: "Carrinho", icon: CreditCard },
+  { to: "/hospede/manutencao", label: "Manutenção", icon: Wrench },
   { to: "/hospede/historico", label: "Histórico", icon: History },
 ];
 
