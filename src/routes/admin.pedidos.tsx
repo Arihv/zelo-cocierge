@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Eye, PackageCheck, Printer, ReceiptText } from "lucide-react";
+import { Eye, ExternalLink, Loader2, PackageCheck, Printer, ReceiptText } from "lucide-react";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { adminNav } from "@/lib/nav";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { useAllOrders, useOrderItems, useUpdateOrderStatus, type OrderRow } from "@/lib/api";
 import { brl, formatDateTime, orderCategoryLabels, orderStatusLabels, orderStatuses, statusTone } from "@/lib/orders";
 
@@ -29,10 +31,41 @@ function paymentTone(status?: OrderRow["payment_status"]): "default" | "secondar
 function AdminPedidos() {
   const { data: orders = [], isLoading } = useAllOrders();
   const updateStatus = useUpdateOrderStatus();
+  const { toast } = useToast();
   const [selected, setSelected] = useState<OrderRow | null>(null);
+  const [chargingId, setChargingId] = useState<string | null>(null);
   const { data: items = [], isLoading: itemsLoading } = useOrderItems(selected?.id);
 
   const imprimir = () => window.print();
+
+  const cobrarNovamente = async (order: OrderRow) => {
+    if (order.payment_status === "approved") return;
+
+    setChargingId(order.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("mercado-pago-checkout", {
+        body: { order_id: order.id },
+      });
+
+      if (error) throw error;
+      if (!data?.checkout_url) throw new Error(data?.error || "Não foi possível gerar a cobrança.");
+
+      toast({
+        title: "Cobrança gerada",
+        description: `O link de pagamento do pedido ${order.order_number} foi criado no Mercado Pago.`,
+      });
+
+      window.location.assign(data.checkout_url);
+    } catch (error) {
+      toast({
+        title: "Não foi possível gerar a cobrança",
+        description: error instanceof Error ? error.message : "Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setChargingId(null);
+    }
+  };
 
   return (
     <DashboardShell nav={adminNav} role="Administrador" logoutTo="/admin/login" title="Pedidos & Cobranças" subtitle="Acompanhe os pedidos, pagamentos e tenha o comprovante completo de cada venda.">
@@ -59,6 +92,8 @@ function AdminPedidos() {
             <div className="grid gap-3 rounded-lg border p-4 sm:grid-cols-3"><div><p className="text-xs text-muted-foreground">Categoria</p><p className="font-medium">{orderCategoryLabels[selected.category]}</p></div><div><p className="text-xs text-muted-foreground">Status</p><p className="font-medium">{orderStatusLabels[selected.status]}</p></div><div><p className="text-xs text-muted-foreground">Pagamento</p><p className="font-medium">{paymentLabel(selected.payment_status)}</p></div></div>
             <div className="flex items-center justify-between border-t pt-4"><span className="text-lg font-semibold">Total</span><strong className="font-serif text-2xl">{brl(Number(selected.total))}</strong></div>
             {selected.payment_status !== "approved" && <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">O pedido está registrado mesmo sem pagamento aprovado. Isso permite conferência e nova cobrança posteriormente.</div>}
+            {selected.payment_status !== "approved" && selected.category !== "manutencao" && <div className="flex flex-col gap-2 sm:flex-row sm:justify-end print:hidden"><Button onClick={() => cobrarNovamente(selected)} disabled={chargingId === selected.id} className="gap-2"><{chargingId === selected.id ? "" : ""}</Button></div>}
+            <div className="flex justify-end print:hidden">{selected.payment_status !== "approved" && selected.category !== "manutencao" && <Button onClick={() => cobrarNovamente(selected)} disabled={chargingId === selected.id} className="gap-2">{chargingId === selected.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}{chargingId === selected.id ? "Gerando cobrança..." : "Cobrar novamente"}</Button>}</div>
             <p className="text-center text-xs text-muted-foreground">Pedido criado em {formatDateTime(selected.created_at)} · Este documento é um comprovante do pedido, não uma NF-e fiscal.</p>
           </div>}
         </DialogContent>
