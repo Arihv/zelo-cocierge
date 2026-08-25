@@ -3,12 +3,20 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type" };
 
+type WebhookPayload = {
+  type?: string;
+  table?: string;
+  schema?: string;
+  record?: { id?: string; user_id?: string; title?: string; body?: string | null; link?: string | null };
+  notification_id?: string;
+};
+
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: cors });
   try {
-    const body = await request.json();
-    const notificationId = body.notification_id as string | undefined;
-    if (!notificationId) throw new Error("notification_id é obrigatório.");
+    const body = await request.json() as WebhookPayload;
+    const notificationId = body.record?.id || body.notification_id;
+    if (!notificationId) throw new Error("notification_id/record.id é obrigatório.");
 
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const { data: notification, error: notificationError } = await supabase
@@ -19,7 +27,7 @@ Deno.serve(async (request) => {
     if (notificationError || !notification) throw new Error("Notificação não encontrada.");
 
     const { data: role } = await supabase.from("user_roles").select("role").eq("user_id", notification.user_id).eq("role", "admin").maybeSingle();
-    if (!role) throw new Error("A notificação não pertence a um administrador.");
+    if (!role) return Response.json({ ok: true, skipped: "notification recipient is not an admin" }, { headers: { ...cors, "Content-Type": "application/json" } });
 
     const vapidPublic = Deno.env.get("VAPID_PUBLIC_KEY");
     const vapidPrivate = Deno.env.get("VAPID_PRIVATE_KEY");
@@ -27,7 +35,8 @@ Deno.serve(async (request) => {
     if (!vapidPublic || !vapidPrivate) throw new Error("VAPID ainda não foi configurado.");
     webpush.setVapidDetails(vapidSubject, vapidPublic, vapidPrivate);
 
-    const { data: subscriptions } = await supabase.from("push_subscriptions").select("id, endpoint, p256dh, auth").eq("user_id", notification.user_id);
+    const { data: subscriptions, error: subscriptionsError } = await supabase.from("push_subscriptions").select("id, endpoint, p256dh, auth").eq("user_id", notification.user_id);
+    if (subscriptionsError) throw subscriptionsError;
     const payload = JSON.stringify({ title: notification.title, body: notification.body || "Há uma nova movimentação na Zelo.", link: notification.link || "/admin/pedidos", tag: `zelo-${notification.id}` });
     const results = await Promise.all((subscriptions || []).map(async (subscription) => {
       try {
