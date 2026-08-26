@@ -10,6 +10,7 @@ import { useApartments, useCreateOrder } from "@/lib/api";
 import { openMercadoPagoCheckout } from "@/lib/mercado-pago";
 import { ownerNav } from "@/lib/nav";
 import { useMarketStore } from "@/hooks/use-market-store";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/proprietario/carrinho")({ component: ProprietarioCarrinhoPage });
 
@@ -20,6 +21,7 @@ function ProprietarioCarrinhoPage() {
   const { data: apartments = [], isLoading: apartmentsLoading } = useApartments(true);
   const { minOrder } = useMarketStore();
   const createOrder = useCreateOrder();
+  const { user, profile } = useAuth();
   const [selectedApartmentId, setSelectedApartmentId] = useState("");
   const selectedApartment = apartments.find((apartment) => apartment.id === selectedApartmentId);
 
@@ -27,12 +29,16 @@ function ProprietarioCarrinhoPage() {
     if (!items.length) return;
     if (!selectedApartment) return toast.error("Selecione o imóvel que receberá este pedido.");
     if (total < minOrder) return toast.error(`O pedido mínimo do mercado é de ${brl(minOrder)}.`);
+    if (!user) return toast.error("Faça login novamente para continuar.");
     try {
       const order = await createOrder.mutateAsync({
         category: "mercado",
         total,
+        customerName: profile?.full_name?.trim() || undefined,
+        customerEmail: user.email?.trim() || undefined,
+        customerPhone: profile?.phone?.trim() || undefined,
         apartmentId: selectedApartment.id,
-        details: JSON.stringify({ source: "owner_market_cart", apartment_code: selectedApartment.code, item_count: itemCount }),
+        details: JSON.stringify({ source: "owner_market_cart", apartment_code: selectedApartment.code, apartment_name: selectedApartment.name, item_count: itemCount }),
         items: items.map((item) => ({ name: item.name, quantity: item.quantity, unit_price: item.unitPrice, service_key: `product:${item.productId}` })),
       });
       await openMercadoPagoCheckout(order.id);
