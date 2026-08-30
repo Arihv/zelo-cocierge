@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Flame, Info, ShoppingCart, Sparkles } from "lucide-react";
+import { Flame, Info, Minus, Plus, ShoppingCart, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DashboardShell } from "@/components/dashboard-shell";
