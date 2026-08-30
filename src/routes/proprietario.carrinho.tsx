@@ -24,22 +24,25 @@ function ProprietarioCarrinhoPage() {
   const { user, profile } = useAuth();
   const [selectedApartmentId, setSelectedApartmentId] = useState("");
   const selectedApartment = apartments.find((apartment) => apartment.id === selectedApartmentId);
+  const hasMarketItem = items.some((item) => item.category === "mercado");
 
   const checkout = async () => {
     if (!items.length) return;
     if (!selectedApartment) return toast.error("Selecione o imóvel que receberá este pedido.");
-    if (total < minOrder) return toast.error(`O pedido mínimo do mercado é de ${brl(minOrder)}.`);
+    const hasMarketItem = items.some((item) => item.category === "mercado");
+    if (hasMarketItem && total < minOrder) return toast.error(`O pedido mínimo do mercado é de ${brl(minOrder)}.`);
     if (!user) return toast.error("Faça login novamente para continuar.");
     try {
+      const category = items.every((item) => item.category === "kit") ? "kit" : "mercado";
       const order = await createOrder.mutateAsync({
-        category: "mercado",
+        category,
         total,
         customerName: profile?.full_name?.trim() || undefined,
         customerEmail: user.email?.trim() || undefined,
         customerPhone: profile?.phone?.trim() || undefined,
         apartmentId: selectedApartment.id,
-        details: JSON.stringify({ source: "owner_market_cart", apartment_code: selectedApartment.code, apartment_name: selectedApartment.name, item_count: itemCount }),
-        items: items.map((item) => ({ name: item.name, quantity: item.quantity, unit_price: item.unitPrice, service_key: `product:${item.productId}` })),
+        details: JSON.stringify({ source: "owner_cart", apartment_code: selectedApartment.code, apartment_name: selectedApartment.name, item_count: itemCount }),
+        items: items.map((item) => ({ name: item.name, quantity: item.quantity, unit_price: item.unitPrice, service_key: item.serviceKey || (item.productId ? `product:${item.productId}` : undefined) })),
       });
       await openMercadoPagoCheckout(order.id);
       clear();
@@ -70,8 +73,8 @@ function ProprietarioCarrinhoPage() {
           <CardHeader><CardTitle>Entrega e pagamento</CardTitle><CardDescription>Defina o imóvel antes de confirmar o pedido.</CardDescription></CardHeader>
           <CardContent className="space-y-5">
             <div className="space-y-2"><label htmlFor="owner-order-apartment" className="flex items-center gap-2 text-sm font-medium"><Building2 className="h-4 w-4" /> Imóvel de entrega</label><select id="owner-order-apartment" value={selectedApartmentId} onChange={(event) => setSelectedApartmentId(event.target.value)} disabled={apartmentsLoading || apartments.length === 0} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="">{apartmentsLoading ? "Carregando imóveis..." : "Selecione um imóvel"}</option>{apartments.map((apartment) => <option key={apartment.id} value={apartment.id}>{apartment.code} — {apartment.name}</option>)}</select>{!apartmentsLoading && apartments.length === 0 && <p className="text-sm text-destructive">Nenhum imóvel está vinculado à sua conta.</p>}</div>
-            <div className="space-y-2 border-t pt-4 text-sm"><div className="flex justify-between"><span className="text-muted-foreground">Itens</span><span>{itemCount}</span></div><div className="flex justify-between text-lg font-semibold"><span>Total</span><span>{brl(total)}</span></div>{total < minOrder && <p className="text-xs text-amber-700 dark:text-amber-300">Faltam {brl(minOrder - total)} para atingir o pedido mínimo de {brl(minOrder)}.</p>}</div>
-            <Button className="w-full" disabled={!items.length || !selectedApartmentId || total < minOrder || createOrder.isPending} onClick={checkout}><ShoppingCart className="mr-2 h-4 w-4" /> {createOrder.isPending ? "Preparando pagamento..." : "Ir para pagamento"}</Button>
+            <div className="space-y-2 border-t pt-4 text-sm"><div className="flex justify-between"><span className="text-muted-foreground">Itens</span><span>{itemCount}</span></div><div className="flex justify-between text-lg font-semibold"><span>Total</span><span>{brl(total)}</span></div>{hasMarketItem && total < minOrder && <p className="text-xs text-amber-700 dark:text-amber-300">Faltam {brl(minOrder - total)} para atingir o pedido mínimo de {brl(minOrder)}.</p>}</div>
+            <Button className="w-full" disabled={!items.length || !selectedApartmentId || (hasMarketItem && total < minOrder) || createOrder.isPending} onClick={checkout}><ShoppingCart className="mr-2 h-4 w-4" /> {createOrder.isPending ? "Preparando pagamento..." : "Ir para pagamento"}</Button>
           </CardContent>
         </Card>
       </div>

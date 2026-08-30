@@ -4,10 +4,11 @@ import { useAuth } from "@/hooks/use-auth";
 export type OwnerCartItem = {
   id: string;
   name: string;
-  category: "mercado";
+  category: "mercado" | "kit";
   quantity: number;
   unitPrice: number;
-  productId: string;
+  productId?: string;
+  serviceKey?: string;
 };
 
 type OwnerCartContextValue = {

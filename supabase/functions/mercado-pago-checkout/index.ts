@@ -45,6 +45,7 @@ Deno.serve(async (request) => {
     if (!isAdmin && order.user_id !== user.id) throw new Error("Você não tem permissão para cobrar este pedido.");
     if (order.category === "manutencao") throw new Error("Chamados de manutenção não possuem pagamento online.");
     if (order.payment_status === "approved") throw new Error("Este pedido já foi pago.");
+    if (!(Number(order.total) > 0)) throw new Error("O valor do pedido precisa ser maior que zero para gerar a cobrança.");
 
     const accessToken = Deno.env.get("MERCADO_PAGO_ACCESS_TOKEN");
     const siteUrl = Deno.env.get("SITE_URL");

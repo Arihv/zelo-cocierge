@@ -11,7 +11,7 @@ import { useGuestCart } from "@/hooks/use-guest-cart";
 import { openMercadoPagoCheckout } from "@/lib/mercado-pago";
 import { guestNav } from "@/lib/nav";
 import { useAuth } from "@/hooks/use-auth";
-import { useCreateOrder, useSiteSettings } from "@/lib/api";
+import { findApartmentIdByCode, useCreateOrder, useSiteSettings } from "@/lib/api";
 
 export const Route = createFileRoute("/hospede/carrinho")({ component: GuestCartPage });
 const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -39,7 +39,8 @@ function GuestCartPage() {
     if (!validCpf(cpf)) { toast.error("Confira o CPF informado."); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error("Confira o e-mail informado."); return; }
     try {
-      const order = await createOrder.mutateAsync({ category: "servico", total: grandTotal, customerName: name.trim(), customerCpf: onlyDigits(cpf), customerEmail: email.trim(), customerPhone: phone.trim(), apartmentId: null, reservationId: null, details: JSON.stringify({ source: "guest_cart", item_count: itemCount, apartment_code: apartmentCode.trim().toUpperCase(), check_in: checkIn, check_out: checkOut, subtotal: total, delivery_fee: deliveryFee }), items: items.map((item) => ({ name: item.name, quantity: item.quantity, unit_price: item.unitPrice, observation: item.observation?.trim() || undefined, service_key: item.serviceKey || (item.productId ? `product:${item.productId}` : undefined) })) });
+      const apartmentId = await findApartmentIdByCode(apartmentCode);
+      const order = await createOrder.mutateAsync({ category: "servico", total: grandTotal, customerName: name.trim(), customerCpf: onlyDigits(cpf), customerEmail: email.trim(), customerPhone: phone.trim(), apartmentId, reservationId: null, details: JSON.stringify({ source: "guest_cart", item_count: itemCount, apartment_code: apartmentCode.trim().toUpperCase(), check_in: checkIn, check_out: checkOut, subtotal: total, delivery_fee: deliveryFee }), items: items.map((item) => ({ name: item.name, quantity: item.quantity, unit_price: item.unitPrice, observation: item.observation?.trim() || undefined, service_key: item.serviceKey || (item.productId ? `product:${item.productId}` : undefined) })) });
       await openMercadoPagoCheckout(order.id); clear();
     } catch (error) { toast.error(error instanceof Error ? error.message : "Não foi possível iniciar o pagamento."); }
   };

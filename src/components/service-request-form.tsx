@@ -6,9 +6,8 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { brl, type OrderCategory } from "@/lib/orders";
-import { priceFor, useCreateOrder, useMyReservation, usePricing, useServices } from "@/lib/api";
+import { priceFor, findApartmentIdByCode, useCreateOrder, usePricing, useServices } from "@/lib/api";
 import { propertyTypeLabelFromCode } from "@/lib/property";
-import { NoReservationCard } from "./reservation-summary";
 
 interface Props {
   category: OrderCategory;
@@ -23,18 +22,20 @@ interface Props {
 /**
  * Formulário de solicitação de serviços do hóspede.
  * O preço vem da tabela de preços da administração, considerando o tipo do imóvel (S/D/T).
+ * Não exige uma reserva cadastrada no Zelo: basta informar o código do imóvel
+ * da hospedagem feita por fora.
  */
 export function ServiceRequestForm({ category, serviceKeys, title, description, scheduling = true }: Props) {
-  const { data: reservation, isLoading } = useMyReservation();
   const { data: services = [] } = useServices("guest");
   const { data: pricing = [] } = usePricing();
   const createOrder = useCreateOrder();
 
   const [qty, setQty] = useState<Record<string, number>>({});
+  const [apartmentCode, setApartmentCode] = useState("");
   const [scheduledFor, setScheduledFor] = useState("");
   const [notes, setNotes] = useState("");
 
-  const code = reservation?.apartments?.code ?? null;
+  const code = apartmentCode.trim() || null;
 
   const list = useMemo(
     () =>
@@ -49,9 +50,6 @@ export function ServiceRequestForm({ category, serviceKeys, title, description, 
     0,
   );
 
-  if (isLoading) return <Card className="p-6 text-sm text-muted-foreground">Carregando…</Card>;
-  if (!reservation) return <NoReservationCard />;
-
   const submit = async () => {
     const items = list
       .filter((s) => (qty[s.key] ?? 0) > 0)
@@ -62,6 +60,10 @@ export function ServiceRequestForm({ category, serviceKeys, title, description, 
         service_key: s.key,
       }));
 
+    if (!apartmentCode.trim()) {
+      toast.error("Informe o código do imóvel da hospedagem.");
+      return;
+    }
     if (items.length === 0) {
       toast.error("Selecione ao menos um item.");
       return;
@@ -72,12 +74,13 @@ export function ServiceRequestForm({ category, serviceKeys, title, description, 
     }
 
     try {
+      const apartmentId = await findApartmentIdByCode(apartmentCode);
       await createOrder.mutateAsync({
         category,
         total,
-        details: notes.trim() || null || undefined,
-        apartmentId: reservation.apartment_id,
-        reservationId: reservation.id,
+        details: JSON.stringify({ apartment_code: apartmentCode.trim().toUpperCase(), notes: notes.trim() || undefined }),
+        apartmentId,
+        reservationId: null,
         scheduledFor: scheduling && scheduledFor ? new Date(scheduledFor).toISOString() : null,
         items,
       });
@@ -96,9 +99,11 @@ export function ServiceRequestForm({ category, serviceKeys, title, description, 
         <div className="border-b p-5">
           <h3 className="font-serif text-lg font-semibold">{title}</h3>
           <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Imóvel {code ?? "—"} · {propertyTypeLabelFromCode(code)}
-          </p>
+          <div className="mt-3 max-w-[10rem]">
+            <Label htmlFor={`apartment-code-${category}`} className="text-xs">Código do imóvel *</Label>
+            <Input id={`apartment-code-${category}`} value={apartmentCode} onChange={(e) => setApartmentCode(e.target.value.toUpperCase())} placeholder="Ex.: S101" className="mt-1 h-9 font-mono uppercase" />
+          </div>
+          {code && <p className="mt-1 text-xs text-muted-foreground">{propertyTypeLabelFromCode(code)}</p>}
         </div>
         <div className="divide-y">
           {list.length === 0 && (
