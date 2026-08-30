@@ -9,13 +9,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { useGuestCart } from "@/hooks/use-guest-cart";
 import { type MarketProduct, useMarketStore } from "@/hooks/use-market-store";
+import { useSiteSettings } from "@/lib/api";
 import { guestNav } from "@/lib/nav";
 
 export const Route = createFileRoute("/hospede/mercado")({ component: HospedeMercadoPage });
 const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 function HospedeMercadoPage() {
-  const { products, categories, minOrder, loading } = useMarketStore();
+  const { products, categories, loading } = useMarketStore();
+  const { data: siteSettings } = useSiteSettings();
+  const minOrder = siteSettings?.minimumOrderAmount ?? 0;
   const { items, addItem, setQuantity, itemCount, total } = useGuestCart();
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todas");

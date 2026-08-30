@@ -6,10 +6,9 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useOwnerCart } from "@/hooks/use-owner-cart";
-import { useApartments, useCreateOrder } from "@/lib/api";
+import { useApartments, useCreateOrder, useSiteSettings } from "@/lib/api";
 import { openMercadoPagoCheckout } from "@/lib/mercado-pago";
 import { ownerNav } from "@/lib/nav";
-import { useMarketStore } from "@/hooks/use-market-store";
 import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/proprietario/carrinho")({ component: ProprietarioCarrinhoPage });
@@ -19,7 +18,8 @@ const brl = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency
 function ProprietarioCarrinhoPage() {
   const { items, itemCount, total, removeItem, setQuantity, clear } = useOwnerCart();
   const { data: apartments = [], isLoading: apartmentsLoading } = useApartments(true);
-  const { minOrder } = useMarketStore();
+  const { data: siteSettings } = useSiteSettings();
+  const minOrder = siteSettings?.minimumOrderAmount ?? 0;
   const createOrder = useCreateOrder();
   const { user, profile } = useAuth();
   const [selectedApartmentId, setSelectedApartmentId] = useState("");

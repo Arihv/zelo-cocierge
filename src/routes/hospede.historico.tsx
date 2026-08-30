@@ -1,23 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { guestNav } from "@/lib/nav";
-import { useOrdersStore } from "@/hooks/use-orders-store";
+import { useMyOrders } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { History, Package, CheckCircle2, DollarSign } from "lucide-react";
+import { brl, formatDateTime, orderCategoryLabels, orderItemsSummary, orderStatusLabels } from "@/lib/orders";
 
 export const Route = createFileRoute("/hospede/historico")({
   component: HospedeHistorico,
 });
 
 export function HospedeHistorico() {
-  const { orders: pedidos, loading } = useOrdersStore();
+  const { data: pedidos = [], isLoading: loading } = useMyOrders();
 
-  const totalGasto = pedidos.reduce((acc, p) => {
-    const val = parseFloat(String(p.valor || "0").replace(/[^\d,-]/g, "").replace(",", "."));
-    return acc + (isNaN(val) ? 0 : val);
-  }, 0);
+  const totalGasto = pedidos.reduce((acc, p) => acc + Number(p.total || 0), 0);
 
   return (
     <DashboardShell
@@ -37,7 +34,7 @@ export function HospedeHistorico() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold font-serif text-emerald-600">
-                R$ {totalGasto.toFixed(2).replace(".", ",")}
+                {brl(totalGasto)}
               </div>
               <p className="text-xs text-muted-foreground mt-1">Soma de conveniências e facilidades</p>
             </CardContent>
@@ -74,22 +71,22 @@ export function HospedeHistorico() {
               </div>
             ) : (
               <div className="divide-y">
-                {pedidos.map((p, idx) => (
-                  <div key={p.id || idx} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="space-y-1">
+                {pedidos.map((p) => (
+                  <div key={p.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="space-y-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-[10px] font-mono">{p.id}</Badge>
-                        <span className="text-xs font-bold text-primary">{p.categoria || "Pedido"}</span>
-                        <span className="text-xs text-muted-foreground">• {p.data}</span>
+                        <Badge variant="outline" className="text-[10px] font-mono">{p.order_number}</Badge>
+                        <span className="text-xs font-bold text-primary">{orderCategoryLabels[p.category]}</span>
+                        <span className="text-xs text-muted-foreground">• {formatDateTime(p.created_at)}</span>
                       </div>
-                      <p className="text-sm font-semibold text-foreground">{p.itens}</p>
-                      <p className="text-xs text-muted-foreground">Entregar para: <b>{p.solicitante}</b> (Unidade {p.imovel})</p>
+                      <p className="text-sm font-semibold text-foreground truncate">{orderItemsSummary(p)}</p>
+                      <p className="text-xs text-muted-foreground">Unidade: <b>{p.apartments?.code || "—"}</b></p>
                     </div>
 
                     <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-0 pt-2 sm:pt-0">
-                      <span className="text-base font-bold font-serif text-foreground">{p.valor}</span>
+                      <span className="text-base font-bold font-serif text-foreground">{brl(Number(p.total))}</span>
                       <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
-                        <CheckCircle2 className="h-3 w-3 mr-1" /> {p.status || "Recebido"}
+                        <CheckCircle2 className="h-3 w-3 mr-1" /> {orderStatusLabels[p.status]}
                       </Badge>
                     </div>
                   </div>

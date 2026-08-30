@@ -11,8 +11,7 @@ import { useGuestCart } from "@/hooks/use-guest-cart";
 import { openMercadoPagoCheckout } from "@/lib/mercado-pago";
 import { guestNav } from "@/lib/nav";
 import { useAuth } from "@/hooks/use-auth";
-import { useCreateOrder } from "@/lib/api";
-import { supabase } from "@/integrations/supabase/client";
+import { useCreateOrder, useSiteSettings } from "@/lib/api";
 
 export const Route = createFileRoute("/hospede/carrinho")({ component: GuestCartPage });
 const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -25,9 +24,10 @@ function GuestCartPage() {
   const createOrder = useCreateOrder();
   const [name, setName] = useState(""); const [cpf, setCpf] = useState(""); const [email, setEmail] = useState(""); const [phone, setPhone] = useState("");
   const [checkIn, setCheckIn] = useState(""); const [checkOut, setCheckOut] = useState(""); const [apartmentCode, setApartmentCode] = useState("");
-  const [minimumOrder, setMinimumOrder] = useState(0); const [deliveryFee, setDeliveryFee] = useState(0);
+  const { data: siteSettings } = useSiteSettings();
+  const minimumOrder = siteSettings?.minimumOrderAmount ?? 0;
+  const deliveryFee = siteSettings?.deliveryFee ?? 0;
   useEffect(() => { setName(profile?.full_name || ""); setPhone(profile?.phone || ""); setEmail(user?.email || ""); }, [profile, user]);
-  useEffect(() => { void (async () => { const { data } = await supabase.from("site_settings").select("minimum_order_amount, delivery_fee").eq("id", 1).maybeSingle(); if (data) { setMinimumOrder(Number(data.minimum_order_amount || 0)); setDeliveryFee(Number(data.delivery_fee || 0)); } })(); }, []);
   const grandTotal = total + (items.length ? deliveryFee : 0);
   const minimumMet = total >= minimumOrder;
   const checkout = async () => {

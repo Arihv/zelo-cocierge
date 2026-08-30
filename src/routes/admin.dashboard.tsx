@@ -3,18 +3,18 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { adminNav } from "@/lib/nav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Home, CalendarRange, ShoppingBag, DollarSign, Clock } from "lucide-react";
-import { useOrdersStore } from "@/hooks/use-orders-store";
-import { useApartments, useReservations } from "@/lib/api";
+import { useAllOrders, useApartments, useReservations } from "@/lib/api";
+import { orderItemsSummary, orderStatusLabels } from "@/lib/orders";
 
 export const Route = createFileRoute("/admin/dashboard")({ component: AdminDashboard });
 
 export function AdminDashboard() {
-  const { orders } = useOrdersStore();
+  const { data: orders = [] } = useAllOrders();
   const { data: apartments = [] } = useApartments();
   const { data: reservations = [] } = useReservations();
   const guestsCount = new Set(reservations.map((reservation) => reservation.guest_id).filter(Boolean)).size;
-  const pendingOrders = orders.filter((order) => !["Entregue", "Cancelado"].includes(order.status)).length;
-  const revenue = orders.reduce((sum, order) => sum + Number(order.valor.replace("R$", "").replace(".", "").replace(",", ".").trim() || 0), 0);
+  const pendingOrders = orders.filter((order) => !["concluido", "cancelado"].includes(order.status)).length;
+  const revenue = orders.reduce((sum, order) => sum + Number(order.total || 0), 0);
   const countByType = (type: string) => apartments.filter((apartment) => apartment.code?.startsWith(type)).length;
 
   return (
@@ -37,7 +37,7 @@ export function AdminDashboard() {
           <Card>
             <CardHeader><CardTitle className="flex items-center gap-2 text-base"><ShoppingBag className="h-4 w-4 text-primary" /> Últimos pedidos</CardTitle><CardDescription>Solicitações de hóspedes e operação</CardDescription></CardHeader>
             <CardContent className="space-y-3">
-              {orders.slice(0, 4).map((order) => <div key={order.id} className="flex items-center justify-between gap-3 border-b pb-3 text-sm last:border-0"><div className="min-w-0"><p className="truncate font-semibold">{order.solicitante} · {order.imovel}</p><p className="truncate text-xs text-muted-foreground">{order.categoria}: {order.itens}</p></div><span className="shrink-0 text-xs font-medium">{order.status}</span></div>)}
+              {orders.slice(0, 4).map((order) => <div key={order.id} className="flex items-center justify-between gap-3 border-b pb-3 text-sm last:border-0"><div className="min-w-0"><p className="truncate font-semibold">{order.customer_name || order.owner_profile?.full_name || "Solicitante não informado"} · {order.apartments?.code || "—"}</p><p className="truncate text-xs text-muted-foreground">{orderItemsSummary(order)}</p></div><span className="shrink-0 text-xs font-medium">{orderStatusLabels[order.status]}</span></div>)}
               {!orders.length && <p className="py-6 text-center text-xs text-muted-foreground">Nenhum pedido registrado.</p>}
             </CardContent>
           </Card>

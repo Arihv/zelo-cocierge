@@ -74,3 +74,29 @@ export function formatDateTime(value?: string | null) {
   if (Number.isNaN(d.getTime())) return "—";
   return d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
 }
+
+/**
+ * Resume os itens de um pedido em texto legível, priorizando os itens
+ * cadastrados em order_items. Para chamados de manutenção (que não têm
+ * itens), usa a descrição registrada em `details`.
+ */
+export function orderItemsSummary(order: {
+  category: OrderCategory;
+  details: string | null;
+  order_items?: { name: string; quantity: number }[] | null;
+}): string {
+  if (order.order_items && order.order_items.length > 0) {
+    return order.order_items.map((item) => `${item.quantity}× ${item.name}`).join(", ");
+  }
+  if (order.category === "manutencao") {
+    try {
+      const details = order.details ? JSON.parse(order.details) : {};
+      if (typeof details.descricao === "string" && details.descricao) return details.descricao;
+      if (typeof details.categoria === "string" && details.categoria) return `Chamado: ${details.categoria}`;
+    } catch {
+      // details pode não ser um JSON válido; segue para o rótulo padrão.
+    }
+    return "Chamado de manutenção";
+  }
+  return orderCategoryLabels[order.category];
+}

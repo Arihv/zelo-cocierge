@@ -54,7 +54,7 @@ export function useMarketStore() {
   const updateProductStock = async (id: string, stock: number) => updateProduct(id, { stock: Math.max(0, stock) });
 
   return useMemo(() => ({
-    products, loading, categories: MARKET_CATEGORIES, minOrder: 30,
+    products, loading, categories: MARKET_CATEGORIES,
     refreshProducts, createProduct, updateProduct, deleteProduct, updateProductStock,
   }), [products, loading, refreshProducts]);
 }
