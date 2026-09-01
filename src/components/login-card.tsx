@@ -22,7 +22,7 @@ const DEFAULT_TITLES: Record<RoleLabel, string> = {
   "Administrador": "Gestão e controle operacional da plataforma.",
 };
 
-const WHATSAPP_LINK = "https://wa.me/message/GB3V6CVQGZULC1";
+const WHATSAPP_LINK = "https://wa.me/5548991654462";
 
 export function LoginCard({
   role,

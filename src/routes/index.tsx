@@ -18,7 +18,7 @@ export const Route = createFileRoute("/")({
   component: IndexPage,
 });
 
-const WHATSAPP_LINK = "https://wa.me/message/GB3V6CVQGZULC1";
+const WHATSAPP_LINK = "https://wa.me/5548991654462";
 
 export function IndexPage() {
   return (

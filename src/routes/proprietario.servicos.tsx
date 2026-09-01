@@ -13,7 +13,7 @@ export const Route = createFileRoute("/proprietario/servicos")({
   component: ProprietarioServicos,
 });
 
-const WHATSAPP_LINK = "https://wa.me/message/GB3V6CVQGZULC1";
+const WHATSAPP_LINK = "https://wa.me/5548991654462";
 
 const CLEANING_PRICES: Record<string, number> = {
   S: 190.0,

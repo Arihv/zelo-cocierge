@@ -1,0 +1,16 @@
+Correções adicionais — 01/09/2026
+
+1. WhatsApp
+- Número central atualizado para (48) 99165-4462 / 5548991654462 em todos os links conhecidos.
+
+2. CPF
+- Nome, CPF e telefone são persistidos no perfil também ao sair do campo, sem depender do pagamento.
+- Após salvar, o contexto de autenticação é atualizado para o CPF continuar preenchido ao navegar pelo site.
+
+3. Vinculação de hospedagem
+- Nova RPC reservation_link_status verifica o banco antes de vincular.
+- A interface informa se: código não existe, imóvel existe sem reserva, reserva está indisponível ou reserva está disponível.
+- Para ativar hospedagem com check-in/check-out, é necessária uma reserva em Administração > Reservas.
+
+4. Mercado Pago
+- Nenhuma credencial foi alterada nesta revisão. O Access Token pode ser atualizado no final.

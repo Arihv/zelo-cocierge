@@ -490,6 +490,10 @@ export type Database = {
           reservation_id: string
         }[]
       }
+      reservation_link_status: {
+        Args: { _code: string }
+        Returns: Json
+      }
       register_admin_push_subscription: {
         Args: {
           _endpoint: string
