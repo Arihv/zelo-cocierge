@@ -1,0 +1,16 @@
+Correções adicionais após novos testes - 01/09/2026
+
+1. Push
+- Nova migration adiciona user_agent e last_seen_at quando a tabela push_subscriptions já existia em uma versão antiga.
+- Corrige o erro: column "user_agent" of relation "push_subscriptions" does not exist.
+
+2. Vincular hospedagem
+- O frontend agora preserva e exibe a mensagem real retornada pela RPC link_reservation.
+- Isso permite diferenciar código inexistente, imóvel sem reserva e reserva indisponível.
+
+3. CPF
+- A atualização do perfil agora é aguardada antes de criar o pedido.
+- Erros ao salvar CPF/nome/telefone deixam de ser ignorados e são mostrados ao usuário.
+
+4. Mercado Pago
+- "invalid access token" é uma resposta do backend/Mercado Pago e exige corrigir o secret MERCADO_PAGO_ACCESS_TOKEN no Supabase; não é resolvido por esta alteração de frontend.

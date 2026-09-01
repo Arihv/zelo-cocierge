@@ -70,7 +70,13 @@ function GuestCartPage() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error("Confira o e-mail informado."); return; }
     try {
       const apartmentId = await findApartmentIdByCode(apartmentCode);
-      if (user) { void supabase.from("profiles").update({ full_name: name.trim(), phone: phone.trim(), cpf: onlyDigits(cpf) }).eq("id", user.id); }
+      if (user) {
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .update({ full_name: name.trim(), phone: phone.trim(), cpf: onlyDigits(cpf) })
+          .eq("id", user.id);
+        if (profileError) throw new Error(`Não foi possível salvar seus dados: ${profileError.message}`);
+      }
       const order = await createOrder.mutateAsync({ category: "servico", total: grandTotal, customerName: name.trim(), customerCpf: onlyDigits(cpf), customerEmail: email.trim(), customerPhone: phone.trim(), apartmentId, reservationId: activeReservation?.id ?? null, details: JSON.stringify({ source: "guest_cart", item_count: itemCount, apartment_code: apartmentCode.trim().toUpperCase(), check_in: checkIn, check_out: checkOut, subtotal: total, delivery_fee: deliveryFee }), items: items.map((item) => ({ name: item.name, quantity: item.quantity, unit_price: item.unitPrice, observation: item.observation?.trim() || undefined, service_key: item.serviceKey || (item.productId ? `product:${item.productId}` : undefined) })) });
       if (user) localStorage.setItem(`zelo_guest_pending_payment_${user.id}`, order.id);
       await openMercadoPagoCheckout(order.id);
