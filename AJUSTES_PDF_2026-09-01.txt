@@ -1,0 +1,60 @@
+ZELO — AJUSTES SOLICITADOS NO PDF — 01/09/2026
+
+Mantidas as correções anteriores do Mercado Pago e do carrinho.
+
+1. NOTIFICAÇÕES PUSH
+- Criada função pública push-config para fornecer somente a VAPID public key ao navegador.
+- O frontend agora usa VITE_VAPID_PUBLIC_KEY quando disponível e, caso contrário, busca a chave pública no Supabase.
+- Removida a criação de uma segunda Notification pelo dashboard; o service worker fica responsável pelo push.
+- Nova migration remove os gatilhos antigos trg_notify_order_created e trg_notify_order_status, evitando notificações duplicadas/triplicadas quando os gatilhos novos já estão ativos.
+
+2. MANUTENÇÕES
+- Hóspede agora vê seus chamados e os status atualizados na própria tela de Manutenção.
+- Proprietário agora vê os chamados dos próprios imóveis e seus status atualizados.
+- Chamados do hóspede passam a usar a reserva ativa quando existente.
+
+3. CADASTRO / CPF
+- CPF adicionado ao formulário de criação de conta.
+- CPF enviado aos metadados de cadastro e salvo no perfil pela migration.
+- Carrinho continua preenchendo nome, CPF, e-mail e telefone automaticamente pelo perfil.
+
+4. RESERVA / HOSPEDAGEM
+- Ao vincular uma hospedagem, link_reservation passa a vincular guest_id, copiar o nome do perfil e marcar a reserva como ativa.
+- Dashboard do hóspede acompanha alterações da reserva em tempo real.
+- Carrinho preenche automaticamente check-in, check-out e código do imóvel quando há reserva ativa.
+- Pedidos do carrinho são vinculados à reservation_id.
+
+5. DASHBOARD DO HÓSPEDE
+- Criados 6 atalhos clicáveis: Mercado, Kits, Serviços, Manutenção, Histórico e Carrinho.
+
+6. SERVIÇOS
+- Código do imóvel é preenchido automaticamente pela reserva ativa.
+- O cálculo S/D/T passa a usar automaticamente esse código.
+- Formulários de serviço vinculam o pedido à reserva ativa.
+
+7. CARRINHO NO CELULAR
+- Botão flutuante de carrinho adicionado no Mercado, Kits e Serviços quando há itens.
+
+8. OPÇÕES DOS PRODUTOS
+- Nova coluna products.options.
+- Gestão do mercado ganhou campo de opções (separadas por vírgula).
+- Hóspede pode selecionar a opção antes de adicionar o item ao carrinho.
+
+9. CATEGORIAS DO MERCADO
+- Nova tabela market_categories com RLS.
+- Administração pode criar/excluir categorias.
+- Produtos continuam associados pela categoria e a lista passa a vir do banco.
+- Categoria "Higiene e Limpeza" adicionada ao seed.
+
+10. ADMINISTRAÇÃO / RESERVAS
+- Lista de reservas atualiza em tempo real.
+- Reserva ativada pelo hóspede aparece automaticamente como ativa.
+- Botão "Pedidos" abre os pedidos/solicitações relacionados à reserva.
+
+IMPORTANTE PARA PUBLICAÇÃO
+- Aplicar a migration: supabase/migrations/20260901090000_requested_site_adjustments.sql
+- Fazer deploy da nova Edge Function: supabase/functions/push-config
+- Fazer deploy da Edge Function send-admin-push porque o arquivo também foi atualizado.
+- Manter mercado-pago-checkout com Verify JWT legacy DESATIVADO, conforme ajuste anterior.
+- A função push-config deve ficar com verify_jwt=false (já está em supabase/config.toml).
+- VAPID_PUBLIC_KEY e VAPID_PRIVATE_KEY precisam continuar configuradas nos Secrets do Supabase.

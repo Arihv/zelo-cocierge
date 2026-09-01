@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
@@ -6,7 +6,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { brl, type OrderCategory } from "@/lib/orders";
-import { priceFor, findApartmentIdByCode, useCreateOrder, usePricing, useServices } from "@/lib/api";
+import { priceFor, findApartmentIdByCode, useCreateOrder, useMyReservation, usePricing, useServices } from "@/lib/api";
 import { propertyTypeLabelFromCode } from "@/lib/property";
 
 interface Props {
@@ -22,13 +22,14 @@ interface Props {
 /**
  * Formulário de solicitação de serviços do hóspede.
  * O preço vem da tabela de preços da administração, considerando o tipo do imóvel (S/D/T).
- * Não exige uma reserva cadastrada no Zelo: basta informar o código do imóvel
- * da hospedagem feita por fora.
+ * Quando há reserva ativa, o código do imóvel é preenchido automaticamente;
+ * sem reserva, o hóspede ainda pode informar o código manualmente.
  */
 export function ServiceRequestForm({ category, serviceKeys, title, description, scheduling = true }: Props) {
   const { data: services = [] } = useServices("guest");
   const { data: pricing = [] } = usePricing();
   const createOrder = useCreateOrder();
+  const { data: activeReservation } = useMyReservation();
 
   const [qty, setQty] = useState<Record<string, number>>({});
   const [apartmentCode, setApartmentCode] = useState("");
@@ -36,6 +37,12 @@ export function ServiceRequestForm({ category, serviceKeys, title, description, 
   const [notes, setNotes] = useState("");
 
   const code = apartmentCode.trim() || null;
+
+  useEffect(() => {
+    if (!activeReservation) return;
+    const apartment = Array.isArray(activeReservation.apartments) ? activeReservation.apartments[0] : activeReservation.apartments;
+    if (apartment?.code) setApartmentCode(apartment.code);
+  }, [activeReservation]);
 
   const list = useMemo(
     () =>
@@ -80,7 +87,7 @@ export function ServiceRequestForm({ category, serviceKeys, title, description, 
         total,
         details: JSON.stringify({ apartment_code: apartmentCode.trim().toUpperCase(), notes: notes.trim() || undefined }),
         apartmentId,
-        reservationId: null,
+        reservationId: activeReservation?.id ?? null,
         scheduledFor: scheduling && scheduledFor ? new Date(scheduledFor).toISOString() : null,
         items,
       });

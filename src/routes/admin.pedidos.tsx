@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { openMercadoPagoCheckout } from "@/lib/mercado-pago";
 import { useAllOrders, useDeleteOrder, useOrderItems, useUpdateOrderStatus, type OrderRow } from "@/lib/api";
 import { brl, formatDateTime, orderCategoryLabels, orderStatusLabels, orderStatuses, statusTone } from "@/lib/orders";
+import { openMercadoPagoCheckout } from "@/lib/mercado-pago";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/pedidos")({ component: AdminPedidos });
@@ -39,23 +39,23 @@ function AdminPedidos() {
     catch (error) { toast.error("Não foi possível excluir o pedido.", { description: error instanceof Error ? error.message : undefined }); }
     finally { setDeletingId(null); }
   };
-const cobrarNovamente = async (order: OrderRow) => {
-  if (order.payment_status === "approved") return;
+  const cobrarNovamente = async (order: OrderRow) => {
+    if (order.payment_status === "approved") return;
 
-  setChargingId(order.id);
+    setChargingId(order.id);
 
-  try {
-    await openMercadoPagoCheckout(order.id);
-  } catch (error) {
-    window.alert(
-      `Não foi possível gerar a cobrança.\n\n${
-        error instanceof Error ? error.message : "Tente novamente."
-      }`,
-    );
-  } finally {
-    setChargingId(null);
-  }
-};
+    try {
+      await openMercadoPagoCheckout(order.id);
+    } catch (error) {
+      window.alert(
+        `Não foi possível gerar a cobrança.\n\n${
+          error instanceof Error ? error.message : "Tente novamente."
+        }`,
+      );
+    } finally {
+      setChargingId(null);
+    }
+  };
   return <DashboardShell nav={adminNav} role="Administrador" logoutTo="/admin/login" title="Pedidos & Cobranças" subtitle="Acompanhe os pedidos, pagamentos e tenha o comprovante completo de cada venda.">
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="grid gap-4 md:grid-cols-3"><Card><CardHeader className="pb-2"><CardDescription>Pedidos recebidos</CardDescription><CardTitle className="text-2xl">{orders.filter((o) => !["concluido", "cancelado"].includes(o.status)).length}</CardTitle></CardHeader></Card><Card><CardHeader className="pb-2"><CardDescription>Pagamentos pendentes</CardDescription><CardTitle className="text-2xl">{orders.filter((o) => o.payment_status !== "approved" && o.status !== "cancelado").length}</CardTitle></CardHeader></Card><Card><CardHeader className="pb-2"><CardDescription>Pagamentos aprovados</CardDescription><CardTitle className="text-2xl">{orders.filter((o) => o.payment_status === "approved").length}</CardTitle></CardHeader></Card></div>

@@ -17,6 +17,7 @@ const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency"
 
 function HospedeMercadoPage() {
   const { products, categories, loading } = useMarketStore();
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
   const { data: siteSettings } = useSiteSettings();
   const minOrder = siteSettings?.minimumOrderAmount ?? 0;
   const { items, addItem, setQuantity, itemCount, total } = useGuestCart();
@@ -30,14 +31,17 @@ function HospedeMercadoPage() {
     [products, search, selectedCategory],
   );
   const availableProducts = products.filter((product) => product.stock > 0).length;
-  const quantityFor = (productId: string) => marketItems.find((item) => item.productId === productId)?.quantity || 0;
+  const quantityFor = (productId: string) => marketItems.filter((item) => item.productId === productId).reduce((sum, item) => sum + item.quantity, 0);
   const addProduct = (product: MarketProduct) => {
     const quantity = quantityFor(product.id);
     if (quantity >= product.stock) {
       toast.error(`Estoque máximo atingido para ${product.name}.`);
       return;
     }
-    addItem({ id: `product:${product.id}`, name: product.name, category: "mercado", unitPrice: product.price, productId: product.id });
+    const options = (product.options || "").split(",").map((item) => item.trim()).filter(Boolean);
+    const selectedOption = selectedOptions[product.id] || options[0] || "";
+    if (options.length && !selectedOption) { toast.error(`Escolha uma opção para ${product.name}.`); return; }
+    addItem({ id: `product:${product.id}:${selectedOption || "padrao"}`, name: selectedOption ? `${product.name} — ${selectedOption}` : product.name, category: "mercado", unitPrice: product.price, productId: product.id, observation: selectedOption || undefined });
   };
 
   return (
@@ -70,7 +74,8 @@ function HospedeMercadoPage() {
               const low = product.stock > 0 && product.stock <= 5;
               return <Card key={product.id} className="group overflow-hidden border-border/80 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-soft"><CardContent className="space-y-4 p-4">
                 <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-wider text-primary">{product.category}</p><h3 className="mt-1 min-h-10 text-sm font-semibold leading-snug">{product.name}</h3></div><Badge variant={available ? "outline" : "destructive"} className={available ? low ? "shrink-0 border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300" : "shrink-0 border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "shrink-0"}>{available ? `${product.stock} un` : "Esgotado"}</Badge></div>
-                <div className="flex items-center justify-between border-t pt-3"><div><p className="text-[11px] text-muted-foreground">Valor unitário</p><strong className="font-serif text-lg">{brl(product.price)}</strong></div>{quantity ? <div className="flex items-center gap-1"><Button size="icon" variant="outline" className="h-9 w-9 rounded-full" onClick={() => setQuantity(`product:${product.id}`, quantity - 1)} aria-label={`Diminuir ${product.name}`}><Minus className="h-3.5 w-3.5" /></Button><span className="w-6 text-center text-sm font-bold">{quantity}</span><Button size="icon" className="h-9 w-9 rounded-full" disabled={quantity >= product.stock} onClick={() => addProduct(product)} aria-label={`Adicionar ${product.name}`}><Plus className="h-3.5 w-3.5" /></Button></div> : <Button size="sm" className="gap-1.5" disabled={!available} onClick={() => addProduct(product)}><Plus className="h-3.5 w-3.5" />Adicionar</Button>}</div>
+                {product.options ? <div className="space-y-1.5"><label className="text-[11px] font-medium text-muted-foreground">Opção</label><select className="h-9 w-full rounded-md border bg-background px-2 text-xs" value={selectedOptions[product.id] || product.options.split(",")[0]?.trim() || ""} onChange={(e) => setSelectedOptions((current) => ({ ...current, [product.id]: e.target.value }))}>{product.options.split(",").map((option) => option.trim()).filter(Boolean).map((option) => <option key={option} value={option}>{option}</option>)}</select></div> : null}
+                <div className="flex items-center justify-between border-t pt-3"><div><p className="text-[11px] text-muted-foreground">Valor unitário</p><strong className="font-serif text-lg">{brl(product.price)}</strong></div>{quantity ? <div className="flex items-center gap-1"><Button size="icon" variant="outline" className="h-9 w-9 rounded-full" onClick={() => { const selectedOption = selectedOptions[product.id] || (product.options || "").split(",")[0]?.trim() || "padrao"; setQuantity(`product:${product.id}:${selectedOption}`, quantity - 1); }} aria-label={`Diminuir ${product.name}`}><Minus className="h-3.5 w-3.5" /></Button><span className="w-6 text-center text-sm font-bold">{quantity}</span><Button size="icon" className="h-9 w-9 rounded-full" disabled={quantity >= product.stock} onClick={() => addProduct(product)} aria-label={`Adicionar ${product.name}`}><Plus className="h-3.5 w-3.5" /></Button></div> : <Button size="sm" className="gap-1.5" disabled={!available} onClick={() => addProduct(product)}><Plus className="h-3.5 w-3.5" />Adicionar</Button>}</div>
               </CardContent></Card>;
             })}
           </div>
@@ -78,6 +83,7 @@ function HospedeMercadoPage() {
 
         <Card className="h-fit border-primary/20 shadow-soft lg:sticky lg:top-6"><CardHeader className="border-b bg-primary/5"><CardTitle className="flex items-center justify-between text-base"><span>Carrinho</span><span className="flex items-center gap-1.5 text-sm text-primary"><ShoppingCart className="h-4 w-4" />{itemCount}</span></CardTitle><CardDescription>Revise todos os serviços, kits e produtos em um único pedido.</CardDescription></CardHeader><CardContent className="space-y-4 p-4"><div className="max-h-56 space-y-3 overflow-auto pr-1">{items.length ? items.map((item) => <div key={`${item.id}-${item.authorizationCode || ""}`} className="flex justify-between gap-2 text-xs"><span className="leading-relaxed">{item.quantity}× {item.name}</span><strong className="shrink-0">{brl(item.quantity * item.unitPrice)}</strong></div>) : <div className="py-7 text-center text-xs text-muted-foreground"><ShoppingCart className="mx-auto mb-2 h-5 w-5 opacity-50" />Seu carrinho está vazio.</div>}</div><div className="flex justify-between border-t pt-3 text-sm"><span>Total do pedido</span><strong className="font-serif text-lg">{brl(total)}</strong></div><Button className="w-full" asChild><a href="/hospede/carrinho"><PackageCheck className="mr-2 h-4 w-4" />Revisar pedido</a></Button></CardContent></Card>
       </div>
+      {itemCount > 0 && <a href="/hospede/carrinho" className="fixed bottom-5 right-4 z-40 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-xl lg:hidden"><ShoppingCart className="h-4 w-4" /> Carrinho ({itemCount}) · {brl(total)}</a>}
     </DashboardShell>
   );
 }

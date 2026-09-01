@@ -4,6 +4,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type" };
 
 type WebhookPayload = {
+  action?: string;
   type?: string;
   table?: string;
   schema?: string;
@@ -15,6 +16,11 @@ Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: cors });
   try {
     const body = await request.json() as WebhookPayload;
+    if (body.action === "vapid-public-key") {
+      const vapidPublic = Deno.env.get("VAPID_PUBLIC_KEY");
+      if (!vapidPublic) throw new Error("VAPID ainda não foi configurado.");
+      return Response.json({ vapid_public_key: vapidPublic }, { headers: { ...cors, "Content-Type": "application/json" } });
+    }
     const notificationId = body.record?.id || body.notification_id;
     if (!notificationId) throw new Error("notification_id/record.id é obrigatório.");
 

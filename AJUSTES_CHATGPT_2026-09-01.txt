@@ -1,0 +1,17 @@
+Ajustes aplicados em 01/09/2026
+
+1. Mercado Pago
+- src/lib/mercado-pago.ts agora envia explicitamente o access_token da sessão no header Authorization.
+- src/routes/admin.pedidos.tsx usa openMercadoPagoCheckout para cobrar novamente.
+- supabase/functions/mercado-pago-checkout/index.ts inclui x-client-info no CORS e permite POST/OPTIONS.
+
+2. Carrinho
+- Carrinhos de hóspede e proprietário passaram de sessionStorage para localStorage, preservando os itens ao sair/voltar do Mercado Pago e até ao fechar/reabrir a aba.
+- Carrinhos antigos da sessão são migrados automaticamente para localStorage.
+- O carrinho NÃO é mais limpo ao simplesmente abrir o Checkout Pro.
+- O ID do pedido enviado ao Mercado Pago fica marcado como pagamento pendente no navegador.
+- Ao voltar ao carrinho, o sistema consulta o status desse pedido e só limpa automaticamente se payment_status estiver approved.
+- Remoção manual de itens continua funcionando normalmente.
+
+Observação de deploy:
+A configuração da Edge Function mercado-pago-checkout no painel do Supabase deve permanecer com "Verify JWT with legacy secret" DESATIVADO, conforme o ajuste feito no painel. Essa opção não fica armazenada neste ZIP.

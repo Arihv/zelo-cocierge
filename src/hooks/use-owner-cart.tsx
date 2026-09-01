@@ -27,13 +27,34 @@ export function OwnerCartProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const storageKey = user ? `zelo_owner_cart_${user.id}` : null;
   const [items, setItems] = useState<OwnerCartItem[]>([]);
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!storageKey) { setItems([]); return; }
-    try { setItems(JSON.parse(sessionStorage.getItem(storageKey) || "[]")); } catch { setItems([]); }
+    if (!storageKey) {
+      setItems([]);
+      setLoadedKey(null);
+      return;
+    }
+
+    try {
+      const saved = localStorage.getItem(storageKey) ?? sessionStorage.getItem(storageKey) ?? "[]";
+      setItems(JSON.parse(saved));
+      if (!localStorage.getItem(storageKey) && sessionStorage.getItem(storageKey)) {
+        localStorage.setItem(storageKey, saved);
+        sessionStorage.removeItem(storageKey);
+      }
+    } catch {
+      setItems([]);
+    } finally {
+      setLoadedKey(storageKey);
+    }
   }, [storageKey]);
 
-  useEffect(() => { if (storageKey) sessionStorage.setItem(storageKey, JSON.stringify(items)); }, [items, storageKey]);
+  useEffect(() => {
+    if (storageKey && loadedKey === storageKey) {
+      localStorage.setItem(storageKey, JSON.stringify(items));
+    }
+  }, [items, storageKey, loadedKey]);
 
   const value = useMemo<OwnerCartContextValue>(() => ({
     items,
@@ -42,10 +63,17 @@ export function OwnerCartProvider({ children }: { children: ReactNode }) {
     addItem: (item, quantity = 1) => setItems((current) => {
       const existing = current.find((entry) => entry.id === item.id);
       return existing
-        ? current.map((entry) => entry.id === item.id ? { ...entry, quantity: entry.quantity + quantity } : entry)
+        ? current.map((entry) =>
+            entry.id === item.id ? { ...entry, quantity: entry.quantity + quantity } : entry,
+          )
         : [...current, { ...item, quantity }];
     }),
-    setQuantity: (id, quantity) => setItems((current) => current.flatMap((item) => item.id === id ? (quantity > 0 ? [{ ...item, quantity }] : []) : [item])),
+    setQuantity: (id, quantity) =>
+      setItems((current) =>
+        current.flatMap((item) =>
+          item.id === id ? (quantity > 0 ? [{ ...item, quantity }] : []) : [item],
+        ),
+      ),
     removeItem: (id) => setItems((current) => current.filter((item) => item.id !== id)),
     clear: () => setItems([]),
   }), [items]);

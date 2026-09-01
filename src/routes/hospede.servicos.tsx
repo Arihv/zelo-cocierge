@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Flame, Info, Minus, Plus, ShoppingCart, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useGuestCart } from "@/hooks/use-guest-cart";
-import { priceFor, usePricing, useServices } from "@/lib/api";
+import { priceFor, useMyReservation, usePricing, useServices } from "@/lib/api";
 import { guestNav } from "@/lib/nav";
 import { propertyTypeLabelFromCode } from "@/lib/property";
 
@@ -20,8 +20,15 @@ function HospedeServicosPage() {
   const { data: services = [], isLoading: loadingServices } = useServices("guest");
   const { data: pricing = [] } = usePricing();
   const { addItem, itemCount } = useGuestCart();
+  const { data: activeReservation } = useMyReservation();
   const [propertyCode, setPropertyCode] = useState("");
   const code = propertyCode.trim() || null;
+
+  useEffect(() => {
+    if (!activeReservation) return;
+    const apartment = Array.isArray(activeReservation.apartments) ? activeReservation.apartments[0] : activeReservation.apartments;
+    if (apartment?.code) setPropertyCode(apartment.code);
+  }, [activeReservation]);
 
   const addService = (service: (typeof services)[number], quantity: number) => {
     if (service.price_by_property && !code) {
@@ -40,7 +47,7 @@ function HospedeServicosPage() {
   };
 
   return (
-    <DashboardShell nav={guestNav} role="Hóspede" logoutTo="/hospede/login" title="Serviços & comodidades" subtitle="Informe o código do seu imóvel para calcular o valor certo de cada serviço.">
+    <DashboardShell nav={guestNav} role="Hóspede" logoutTo="/hospede/login" title="Serviços & comodidades" subtitle="O código do imóvel é preenchido pela reserva ativa e define automaticamente o valor correto dos serviços.">
       <div className="mx-auto max-w-5xl space-y-6 text-left">
         <Card className="border-primary/20 bg-primary/5">
           <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -86,6 +93,7 @@ function HospedeServicosPage() {
           </div>
         )}
       </div>
+      {itemCount > 0 && <a href="/hospede/carrinho" className="fixed bottom-5 right-4 z-40 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-xl lg:hidden"><ShoppingCart className="h-4 w-4" /> Carrinho ({itemCount})</a>}
     </DashboardShell>
   );
 }

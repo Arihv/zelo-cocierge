@@ -74,6 +74,7 @@ export function LoginCard({
     const password = String(form.get("password") ?? "");
     const fullName = String(form.get("fullName") ?? "");
     const phone = String(form.get("phone") ?? "");
+    const cpf = String(form.get("cpf") ?? "").replace(/\D/g, "");
     if (password.length < 6) {
       toast.error("A senha deve ter pelo menos 6 caracteres");
       return;
@@ -84,6 +85,7 @@ export function LoginCard({
       password,
       fullName,
       phone,
+      cpf,
       role: expectedRole === "host" ? "host" : "guest",
     });
     setBusy(false);
@@ -279,7 +281,28 @@ export function LoginCard({
                     </div>
                     <div className="grid grid-cols-2 gap-3 text-left">
                       <div className="space-y-1">
-                        <label className="text-xs text-stone-600 font-normal">E-mail</label>
+                        <label className="text-xs text-stone-600 font-normal">CPF</label>
+                        <input
+                          name="cpf"
+                          inputMode="numeric"
+                          required
+                          placeholder="000.000.000-00"
+                          className="w-full h-11 px-4 rounded-xl bg-white border border-stone-200 text-stone-900 text-sm focus:outline-none focus:ring-1 focus:ring-[#c6a35d]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs text-stone-600 font-normal">Telefone</label>
+                        <input
+                          name="phone"
+                          type="tel"
+                          required
+                          placeholder="(48) 9..."
+                          className="w-full h-11 px-4 rounded-xl bg-white border border-stone-200 text-stone-900 text-sm focus:outline-none focus:ring-1 focus:ring-[#c6a35d]"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1 text-left">
+                      <label className="text-xs text-stone-600 font-normal">E-mail</label>
                         <input
                           name="email"
                           type="email"
@@ -289,16 +312,6 @@ export function LoginCard({
                           className="w-full h-11 px-4 rounded-xl bg-white border border-stone-200 text-stone-900 text-sm focus:outline-none focus:ring-1 focus:ring-[#c6a35d]"
                         />
                       </div>
-                      <div className="space-y-1">
-                        <label className="text-xs text-stone-600 font-normal">Telefone</label>
-                        <input
-                          name="phone"
-                          type="tel"
-                          placeholder="(48) 9..."
-                          className="w-full h-11 px-4 rounded-xl bg-white border border-stone-200 text-stone-900 text-sm focus:outline-none focus:ring-1 focus:ring-[#c6a35d]"
-                        />
-                      </div>
-                    </div>
                     <div className="space-y-1 text-left">
                       <label className="text-xs text-stone-600 font-normal">Senha</label>
                       <input

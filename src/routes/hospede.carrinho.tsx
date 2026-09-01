@@ -11,7 +11,7 @@ import { useGuestCart } from "@/hooks/use-guest-cart";
 import { openMercadoPagoCheckout } from "@/lib/mercado-pago";
 import { guestNav } from "@/lib/nav";
 import { useAuth } from "@/hooks/use-auth";
-import { findApartmentIdByCode, useCreateOrder, useSiteSettings } from "@/lib/api";
+import { findApartmentIdByCode, useCreateOrder, useMyReservation, useSiteSettings } from "@/lib/api";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/hospede/carrinho")({ component: GuestCartPage });
@@ -23,12 +23,41 @@ function GuestCartPage() {
   const { user, profile } = useAuth();
   const { items, itemCount, total, setQuantity, removeItem, setObservation, clear } = useGuestCart();
   const createOrder = useCreateOrder();
+  const { data: activeReservation } = useMyReservation();
   const [name, setName] = useState(""); const [cpf, setCpf] = useState(""); const [email, setEmail] = useState(""); const [phone, setPhone] = useState("");
   const [checkIn, setCheckIn] = useState(""); const [checkOut, setCheckOut] = useState(""); const [apartmentCode, setApartmentCode] = useState("");
   const { data: siteSettings } = useSiteSettings();
   const minimumOrder = siteSettings?.minimumOrderAmount ?? 0;
   const deliveryFee = siteSettings?.deliveryFee ?? 0;
   useEffect(() => { setName(profile?.full_name || ""); setPhone(profile?.phone || ""); setEmail(user?.email || ""); setCpf(profile?.cpf || ""); }, [profile, user]);
+  useEffect(() => {
+    if (!activeReservation) return;
+    const apartment = Array.isArray(activeReservation.apartments) ? activeReservation.apartments[0] : activeReservation.apartments;
+    setCheckIn(activeReservation.check_in || "");
+    setCheckOut(activeReservation.check_out || "");
+    setApartmentCode(apartment?.code || "");
+    if (!name && activeReservation.guest_name) setName(activeReservation.guest_name);
+  }, [activeReservation]);
+  useEffect(() => {
+    if (!user) return;
+    const pendingKey = `zelo_guest_pending_payment_${user.id}`;
+    const pendingOrderId = localStorage.getItem(pendingKey);
+    if (!pendingOrderId) return;
+
+    void (async () => {
+      const { data } = await supabase
+        .from("orders")
+        .select("payment_status")
+        .eq("id", pendingOrderId)
+        .maybeSingle();
+
+      if (data?.payment_status === "approved") {
+        clear();
+        localStorage.removeItem(pendingKey);
+        toast.success("Pagamento confirmado. Carrinho finalizado com sucesso.");
+      }
+    })();
+  }, [user, clear]);
   const grandTotal = total + (items.length ? deliveryFee : 0);
   const minimumMet = total >= minimumOrder;
   const checkout = async () => {
@@ -42,14 +71,15 @@ function GuestCartPage() {
     try {
       const apartmentId = await findApartmentIdByCode(apartmentCode);
       if (user) { void supabase.from("profiles").update({ full_name: name.trim(), phone: phone.trim(), cpf: onlyDigits(cpf) }).eq("id", user.id); }
-      const order = await createOrder.mutateAsync({ category: "servico", total: grandTotal, customerName: name.trim(), customerCpf: onlyDigits(cpf), customerEmail: email.trim(), customerPhone: phone.trim(), apartmentId, reservationId: null, details: JSON.stringify({ source: "guest_cart", item_count: itemCount, apartment_code: apartmentCode.trim().toUpperCase(), check_in: checkIn, check_out: checkOut, subtotal: total, delivery_fee: deliveryFee }), items: items.map((item) => ({ name: item.name, quantity: item.quantity, unit_price: item.unitPrice, observation: item.observation?.trim() || undefined, service_key: item.serviceKey || (item.productId ? `product:${item.productId}` : undefined) })) });
-      await openMercadoPagoCheckout(order.id); clear();
+      const order = await createOrder.mutateAsync({ category: "servico", total: grandTotal, customerName: name.trim(), customerCpf: onlyDigits(cpf), customerEmail: email.trim(), customerPhone: phone.trim(), apartmentId, reservationId: activeReservation?.id ?? null, details: JSON.stringify({ source: "guest_cart", item_count: itemCount, apartment_code: apartmentCode.trim().toUpperCase(), check_in: checkIn, check_out: checkOut, subtotal: total, delivery_fee: deliveryFee }), items: items.map((item) => ({ name: item.name, quantity: item.quantity, unit_price: item.unitPrice, observation: item.observation?.trim() || undefined, service_key: item.serviceKey || (item.productId ? `product:${item.productId}` : undefined) })) });
+      if (user) localStorage.setItem(`zelo_guest_pending_payment_${user.id}`, order.id);
+      await openMercadoPagoCheckout(order.id);
     } catch (error) { toast.error(error instanceof Error ? error.message : "Não foi possível iniciar o pagamento."); }
   };
   return <DashboardShell nav={guestNav} role="Hóspede" logoutTo="/hospede/login" title="Meu carrinho" subtitle="Revise todos os serviços, kits e itens de mercado antes de realizar um único pagamento.">
     <div className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[1fr,320px]"><div className="space-y-6">
       <Card><CardHeader><CardTitle className="flex items-center gap-2"><ShoppingCart className="h-5 w-5 text-primary" /> Itens selecionados</CardTitle><CardDescription>Informe detalhes de cada item, como sabor ou marca desejada.</CardDescription></CardHeader><CardContent>{items.length === 0 ? <p className="py-10 text-center text-sm text-muted-foreground">Seu carrinho está vazio.</p> : <div className="divide-y">{items.map((item) => <div key={`${item.id}-${item.authorizationCode || ""}`} className="space-y-3 py-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium">{item.name}</p><p className="text-xs text-muted-foreground">{brl(item.unitPrice)} por unidade{item.authorizationCode ? " · autorização registrada" : ""}</p></div><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity(item.id, item.quantity - 1)}><Minus className="h-3.5 w-3.5" /></Button><span className="w-6 text-center text-sm font-semibold">{item.quantity}</span><Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity(item.id, item.quantity + 1)}><Plus className="h-3.5 w-3.5" /></Button></div><Button variant="ghost" size="icon" className="text-destructive" onClick={() => removeItem(item.id)}><Trash2 className="h-4 w-4" /></Button><strong className="w-20 text-right text-sm">{brl(item.unitPrice * item.quantity)}</strong></div></div><div className="space-y-1.5"><Label className="flex items-center gap-1.5 text-xs"><MessageSquareText className="h-3.5 w-3.5 text-primary" /> Observação do item (opcional)</Label><Input value={item.observation || ""} onChange={(e) => setObservation(item.id, e.target.value)} placeholder="Ex.: Lacta branco ou Bis branco" className="mt-1" /></div></div>)}</div>}</CardContent></Card>
-      <Card><CardHeader><CardTitle className="flex items-center gap-2"><Home className="h-5 w-5 text-primary" /> Dados da hospedagem</CardTitle><CardDescription>Você não precisa cadastrar uma reserva no Zelo. Informe os dados da hospedagem que já foi feita por fora para identificarmos onde entregar o pedido.</CardDescription></CardHeader><CardContent className="grid gap-4 sm:grid-cols-2"><div><Label className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" /> Check-in *</Label><Input type="date" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} className="mt-1" /></div><div><Label className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" /> Check-out *</Label><Input type="date" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} className="mt-1" /></div><div className="sm:col-span-2"><Label>Código do apartamento *</Label><Input value={apartmentCode} onChange={(e) => setApartmentCode(e.target.value.toUpperCase())} placeholder="Ex.: S101" className="mt-1" /></div></CardContent></Card>
+      <Card><CardHeader><CardTitle className="flex items-center gap-2"><Home className="h-5 w-5 text-primary" /> Dados da hospedagem</CardTitle><CardDescription>{activeReservation ? "Dados preenchidos automaticamente pela sua reserva ativa. Você pode conferi-los antes de pagar." : "Se ainda não houver reserva vinculada, informe os dados da hospedagem para identificarmos onde entregar o pedido."}</CardDescription></CardHeader><CardContent className="grid gap-4 sm:grid-cols-2"><div><Label className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" /> Check-in *</Label><Input type="date" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} className="mt-1" /></div><div><Label className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" /> Check-out *</Label><Input type="date" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} className="mt-1" /></div><div className="sm:col-span-2"><Label>Código do apartamento *</Label><Input value={apartmentCode} onChange={(e) => setApartmentCode(e.target.value.toUpperCase())} placeholder="Ex.: S101" className="mt-1" /></div></CardContent></Card>
       <Card><CardHeader><CardTitle className="flex items-center gap-2"><UserRound className="h-5 w-5 text-primary" /> Dados para identificação e cobrança</CardTitle><CardDescription>Esses dados ficam salvos no seu cadastro — você não vai precisar digitar de novo no próximo pedido. Servem para conferência e segurança caso o pagamento não seja confirmado.</CardDescription></CardHeader><CardContent className="grid gap-4 sm:grid-cols-2"><div className="sm:col-span-2"><Label>Nome completo *</Label><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome do hóspede" className="mt-1" /></div><div><Label>CPF *</Label><Input value={cpf} onChange={(e) => setCpf(e.target.value)} inputMode="numeric" placeholder="000.000.000-00" className="mt-1" /></div><div><Label>E-mail *</Label><Input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="voce@email.com" className="mt-1" /></div><div className="sm:col-span-2"><Label>Telefone *</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" placeholder="(00) 00000-0000" className="mt-1" /></div></CardContent></Card>
     </div><Card className="h-fit"><CardHeader><CardTitle>Resumo</CardTitle><CardDescription>{itemCount} {itemCount === 1 ? "item" : "itens"}</CardDescription></CardHeader><CardContent className="space-y-3"><div className="flex items-center justify-between text-sm"><span>Subtotal</span><strong>{brl(total)}</strong></div>{items.length > 0 && <div className="flex items-center justify-between text-sm"><span>Taxa de entrega</span><strong>{deliveryFee ? brl(deliveryFee) : "Grátis"}</strong></div>}<div className="flex items-center justify-between border-y py-4"><span>Total</span><strong className="font-serif text-2xl">{brl(grandTotal)}</strong></div>{minimumOrder > 0 && <p className={`text-xs ${minimumMet ? "text-muted-foreground" : "text-destructive"}`}>{minimumMet ? `Pedido mínimo: ${brl(minimumOrder)}.` : `Adicione ${brl(minimumOrder - total)} para atingir o pedido mínimo de ${brl(minimumOrder)}.`}</p>}<p className="text-xs text-muted-foreground">O pedido é registrado antes do Mercado Pago. Se não for aprovado, continua no Histórico para nova cobrança.</p><Button className="w-full gap-2" disabled={!items.length || !minimumMet || createOrder.isPending} onClick={() => void checkout()}><CreditCard className="h-4 w-4" /> {createOrder.isPending ? "Preparando…" : "Ir para pagamento"}</Button></CardContent></Card></div>
   </DashboardShell>;

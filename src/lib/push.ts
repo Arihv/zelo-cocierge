@@ -1,6 +1,15 @@
 import { supabase } from "@/integrations/supabase/client";
 
-const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
+const ENV_VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
+
+async function getVapidPublicKey() {
+  if (ENV_VAPID_PUBLIC_KEY) return ENV_VAPID_PUBLIC_KEY;
+  const { data, error } = await supabase.functions.invoke("push-config", { body: {} });
+  if (error) throw new Error("Não foi possível obter a chave de notificações.");
+  const key = data?.vapid_public_key as string | undefined;
+  if (!key) throw new Error("VAPID_PUBLIC_KEY não configurada no Supabase.");
+  return key;
+}
 
 function urlBase64ToUint8Array(value: string) {
   const padding = "=".repeat((4 - (value.length % 4)) % 4);
@@ -13,7 +22,8 @@ export type PushStatus = "unsupported" | "permission-needed" | "denied" | "activ
 
 export async function registerAdminPush() {
   if (typeof window === "undefined" || !("serviceWorker" in navigator) || !("PushManager" in window)) return { status: "unsupported" as PushStatus };
-  if (!VAPID_PUBLIC_KEY) return { status: "error" as PushStatus, message: "VITE_VAPID_PUBLIC_KEY não configurada." };
+  let vapidPublicKey: string;
+  try { vapidPublicKey = await getVapidPublicKey(); } catch (error) { return { status: "error" as PushStatus, message: error instanceof Error ? error.message : "Chave de push indisponível." }; }
   if (Notification.permission === "denied") return { status: "denied" as PushStatus };
   const permission = Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
   if (permission !== "granted") return { status: permission === "denied" ? "denied" : "permission-needed" as PushStatus };
@@ -21,7 +31,7 @@ export async function registerAdminPush() {
   const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
   await navigator.serviceWorker.ready;
   let subscription = await registration.pushManager.getSubscription();
-  if (!subscription) subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) });
+  if (!subscription) subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) });
 
   const json = subscription.toJSON();
   if (!json.endpoint || !json.keys?.p256dh || !json.keys.auth) throw new Error("Não foi possível registrar este dispositivo.");

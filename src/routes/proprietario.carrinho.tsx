@@ -1,6 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { Building2, Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { useApartments, useCreateOrder, useSiteSettings } from "@/lib/api";
 import { openMercadoPagoCheckout } from "@/lib/mercado-pago";
 import { ownerNav } from "@/lib/nav";
 import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/proprietario/carrinho")({ component: ProprietarioCarrinhoPage });
 
@@ -25,6 +26,27 @@ function ProprietarioCarrinhoPage() {
   const [selectedApartmentId, setSelectedApartmentId] = useState("");
   const selectedApartment = apartments.find((apartment) => apartment.id === selectedApartmentId);
   const hasMarketItem = items.some((item) => item.category === "mercado");
+
+  useEffect(() => {
+    if (!user) return;
+    const pendingKey = `zelo_owner_pending_payment_${user.id}`;
+    const pendingOrderId = localStorage.getItem(pendingKey);
+    if (!pendingOrderId) return;
+
+    void (async () => {
+      const { data } = await supabase
+        .from("orders")
+        .select("payment_status")
+        .eq("id", pendingOrderId)
+        .maybeSingle();
+
+      if (data?.payment_status === "approved") {
+        clear();
+        localStorage.removeItem(pendingKey);
+        toast.success("Pagamento confirmado. Carrinho finalizado com sucesso.");
+      }
+    })();
+  }, [user, clear]);
 
   const checkout = async () => {
     if (!items.length) return;
@@ -44,8 +66,8 @@ function ProprietarioCarrinhoPage() {
         details: JSON.stringify({ source: "owner_cart", apartment_code: selectedApartment.code, apartment_name: selectedApartment.name, item_count: itemCount }),
         items: items.map((item) => ({ name: item.name, quantity: item.quantity, unit_price: item.unitPrice, service_key: item.serviceKey || (item.productId ? `product:${item.productId}` : undefined) })),
       });
+      localStorage.setItem(`zelo_owner_pending_payment_${user.id}`, order.id);
       await openMercadoPagoCheckout(order.id);
-      clear();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível iniciar o pagamento.");
     }

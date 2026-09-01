@@ -10,8 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
-import { useApartments, useCreateOrder } from "@/lib/api";
+import { useApartments, useCreateOrder, useOwnerOrders } from "@/lib/api";
 import { useAuth } from "@/hooks/use-auth";
+import { Badge } from "@/components/ui/badge";
+import { formatDateTime, orderStatusLabels, statusTone } from "@/lib/orders";
 
 export const Route = createFileRoute("/proprietario/manutencao")({
   component: MaintPage,
@@ -29,6 +31,8 @@ function MaintPage() {
   const { profile, user } = useAuth();
   const { data: apartments = [], isLoading: loadingApartments } = useApartments(true);
   const createOrder = useCreateOrder();
+  const { data: ownerOrders = [] } = useOwnerOrders();
+  const maintenanceOrders = ownerOrders.filter((order) => order.category === "manutencao");
   const [priority, setPriority] = useState("media");
   const [category, setCategory] = useState(categories[0]);
   const [apartmentId, setApartmentId] = useState("");
@@ -72,7 +76,8 @@ function MaintPage() {
 
   return (
     <DashboardShell title="Manutenção" subtitle="Abra um chamado por categoria e prioridade." role="Proprietário" nav={ownerNav} logoutTo="/">
-      <Card className="border-border/60 p-6 shadow-elegant max-w-2xl">
+<div className="grid gap-6 lg:grid-cols-[1fr,1fr]">
+      <Card className="border-border/60 p-6 shadow-elegant">
         <h3 className="font-serif text-xl font-semibold">Novo chamado</h3>
         {loadingApartments ? <p className="mt-5 text-sm text-muted-foreground">Carregando seus imóveis...</p> : apartments.length === 0 ? <p className="mt-5 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">Nenhum imóvel está vinculado à sua conta. Peça à administração para vincular seu imóvel antes de abrir um chamado.</p> : <form className="mt-5 space-y-4" onSubmit={submit}>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -105,6 +110,8 @@ function MaintPage() {
           <Button type="submit" disabled={createOrder.isPending} className="h-11 w-full">{createOrder.isPending ? "Enviando chamado..." : "Abrir chamado"}</Button>
         </form>}
       </Card>
+      <Card className="h-fit border-border/60 p-6 shadow-elegant"><h3 className="font-serif text-xl font-semibold">Chamados dos seus imóveis</h3><p className="mt-1 text-sm text-muted-foreground">Mudanças feitas pela operação aparecem aqui automaticamente.</p><div className="mt-4 divide-y">{maintenanceOrders.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">Nenhum chamado registrado.</p> : maintenanceOrders.map((order) => { let details: any = {}; try { details = JSON.parse(order.details || "{}"); } catch {} return <div key={order.id} className="space-y-1 py-4"><div className="flex items-center justify-between gap-3"><p className="font-semibold">{details.categoria || "Manutenção"} · {order.order_number}</p><Badge variant={statusTone(order.status)}>{orderStatusLabels[order.status]}</Badge></div><p className="text-sm text-muted-foreground">{details.descricao || "Chamado de manutenção"}</p><p className="text-xs text-muted-foreground">{order.apartments?.code || details.imovel || "Imóvel"} · atualizado {formatDateTime(order.updated_at || order.created_at)}</p></div>; })}</div></Card>
+      </div>
     </DashboardShell>
   );
 }

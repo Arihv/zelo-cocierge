@@ -23,6 +23,7 @@ type AuthState = {
     password: string;
     fullName: string;
     phone?: string;
+    cpf?: string;
     role: "guest" | "host";
   }) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
@@ -116,11 +117,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
         return { error: error?.message ?? null };
       },
-      signUp: async ({ email, password, fullName, phone, role: requestedRole }) => {
+      signUp: async ({ email, password, fullName, phone, cpf, role: requestedRole }) => {
         const { data, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
-          options: { data: { full_name: fullName, phone: phone ?? "", role: requestedRole } },
+          options: { data: { full_name: fullName, phone: phone ?? "", cpf: cpf ?? "", role: requestedRole } },
         });
         if (error) return { error: error.message };
         if (data.session) await loadIdentity(data.session);

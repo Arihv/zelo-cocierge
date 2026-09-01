@@ -25,7 +25,6 @@ export function DashboardShell({ title, subtitle, role, nav, logoutTo, children 
   const [browserPermission, setBrowserPermission] = useState<NotificationPermission | "unsupported">("unsupported");
   const [pushActive, setPushActive] = useState(false);
   const accessWarningShown = useRef(false);
-  const lastNotificationId = useRef<string | null>(null);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const { user, profile, role: userRole, loading, signOut } = useAuth();
@@ -39,16 +38,8 @@ export function DashboardShell({ title, subtitle, role, nav, logoutTo, children 
     setBrowserPermission("Notification" in window ? window.Notification.permission : "unsupported");
   }, []);
 
-  useEffect(() => {
-    if (userRole !== "admin" || !notifications.length) return;
-    const newest = notifications[0];
-    if (!lastNotificationId.current) { lastNotificationId.current = newest.id; return; }
-    if (lastNotificationId.current === newest.id) return;
-    lastNotificationId.current = newest.id;
-    if (browserPermission === "granted" && typeof window !== "undefined") {
-      try { new window.Notification(newest.title, { body: newest.body || "Há uma nova movimentação na Zelo.", icon: "/favicon.png", tag: `zelo-${newest.id}` }); } catch { /* fallback apenas quando o navegador permitir */ }
-    }
-  }, [notifications, userRole, browserPermission]);
+  // O Web Push é exibido pelo service worker. Evitamos criar uma segunda Notification aqui.
+
 
   const requestBrowserNotifications = async () => {
     try {

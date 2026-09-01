@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.monthly-financial-report]
 verify_jwt = false
+
+[functions.push-config]
+verify_jwt = false
