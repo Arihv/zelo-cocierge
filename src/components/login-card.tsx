@@ -1,7 +1,8 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
-import { useAuth, type AppRole } from "@/hooks/use-auth";
+import { dashboardPathFor, useAuth, type AppRole } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 import { User, MessageCircle } from "lucide-react";
 import { DeveloperCredit } from "./developer-credit";
 
@@ -63,8 +64,19 @@ export function LoginCard({
       toast.error("Não foi possível entrar", { description: error });
       return;
     }
+    const { data: { user } } = await supabase.auth.getUser();
+    let actualRole: AppRole | null = null;
+    if (user) {
+      const { data: roleRow } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      actualRole = (roleRow?.role as AppRole | undefined) ?? null;
+    }
+
     toast.success("Bem-vindo(a) de volta!");
-    navigate({ to: redirectTo });
+    navigate({ to: actualRole ? dashboardPathFor(actualRole) : redirectTo, replace: true });
   };
 
   const handleSignUp = async (e: FormEvent<HTMLFormElement>) => {

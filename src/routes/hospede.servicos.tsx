@@ -19,7 +19,7 @@ const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency"
 function HospedeServicosPage() {
   const { data: services = [], isLoading: loadingServices } = useServices("guest");
   const { data: pricing = [] } = usePricing();
-  const { addItem, itemCount } = useGuestCart();
+  const { items, addItem, setQuantity, itemCount } = useGuestCart();
   const { data: activeReservation } = useMyReservation();
   const [propertyCode, setPropertyCode] = useState("");
   const code = propertyCode.trim() || null;
@@ -71,6 +71,8 @@ function HospedeServicosPage() {
               const price = priceFor(pricing, service.key, code);
               const needsPropertyPrice = service.price_by_property && !code;
               const Icon = service.key === "aquecedor_portatil" ? Flame : Sparkles;
+              const cartId = `service:${service.key}:${code ?? "geral"}`;
+              const quantity = items.find((item) => item.id === cartId)?.quantity || 0;
 
               return (
                 <Card key={service.id} className="flex flex-col">
@@ -84,8 +86,17 @@ function HospedeServicosPage() {
                     <CardTitle className="mt-2 text-base">{service.name}</CardTitle>
                     <CardDescription className="text-xs">{service.description}</CardDescription>
                   </CardHeader>
-                  <CardContent className="mt-auto">
-                    <QuantityAdd disabled={needsPropertyPrice} onAdd={(quantity) => addService(service, quantity)} />
+                  <CardContent className="mt-auto flex items-center justify-between gap-3">
+                    {quantity > 0 ? (
+                      <div className="flex items-center gap-2">
+                        <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity(cartId, quantity - 1)} disabled={needsPropertyPrice} aria-label={`Diminuir ${service.name}`}><Minus className="h-3.5 w-3.5" /></Button>
+                        <span className="w-6 text-center text-sm font-semibold">{quantity}</span>
+                        <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity(cartId, quantity + 1)} disabled={needsPropertyPrice} aria-label={`Aumentar ${service.name}`}><Plus className="h-3.5 w-3.5" /></Button>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Nenhum no carrinho</span>
+                    )}
+                    <Button type="button" size="sm" onClick={() => addService(service, 1)} disabled={needsPropertyPrice}>{quantity > 0 ? "Adicionar mais" : "Adicionar"}</Button>
                   </CardContent>
                 </Card>
               );
@@ -98,12 +109,3 @@ function HospedeServicosPage() {
   );
 }
 
-function QuantityAdd({ disabled, onAdd }: { disabled: boolean; onAdd: (quantity: number) => void }) {
-  const [quantity, setQuantity] = useState(1);
-  return <div className="flex items-center gap-2">
-    <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity((value) => Math.max(1, value - 1))} disabled={disabled}><Minus className="h-3.5 w-3.5" /></Button>
-    <span className="w-5 text-center text-sm font-semibold">{quantity}</span>
-    <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity((value) => value + 1)} disabled={disabled}><Plus className="h-3.5 w-3.5" /></Button>
-    <Button type="button" size="sm" onClick={() => onAdd(quantity)} disabled={disabled}>Adicionar</Button>
-  </div>;
-}

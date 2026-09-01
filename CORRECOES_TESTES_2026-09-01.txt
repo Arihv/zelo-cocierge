@@ -1,0 +1,43 @@
+Correções pós-teste — 01/09/2026
+
+1. Push no iPhone
+- Adicionado manifest PWA e ícones 192/512.
+- No iPhone fora do modo instalado, o sistema orienta: Compartilhar > Adicionar à Tela de Início.
+- Erros de push agora exibem a causa real.
+
+2. Push no computador
+- Registro de assinatura passou a usar a RPC register_admin_push_subscription.
+- A RPC reassocia com segurança endpoints antigos/duplicados ao administrador autenticado.
+- Executar a migration 20260901173000_fix_push_login_reservation.sql no Supabase.
+
+3. Login por perfil
+- Após login, o sistema consulta o papel real da conta e envia diretamente para o dashboard correto.
+- Admin não permanece na área de hóspede e proprietário.
+
+4. Serviços
+- Quantidade agora funciona como nos kits.
+- O botão menos reduz até zero/remover do carrinho; mais aumenta a quantidade real.
+
+5. Mercado Pago
+- A mensagem real devolvida pela Edge Function passa a ser extraída e exibida, em vez de apenas "Edge Function returned a non-2xx status code".
+- Observação: isso melhora o diagnóstico; se o Mercado Pago continuar rejeitando a credencial, a causa de backend ainda precisa ser corrigida no painel/token.
+
+6. Vincular hospedagem
+- A função agora diferencia:
+  a) código inexistente;
+  b) imóvel existente sem reserva disponível;
+  c) reserva existente, mas indisponível/já vinculada.
+- Um imóvel cadastrado sozinho não possui check-in/check-out; para ativar hospedagem ainda é necessária uma reserva vinculada ao imóvel.
+
+Arquivos principais alterados:
+- src/components/login-card.tsx
+- src/components/dashboard-shell.tsx
+- src/lib/push.ts
+- src/lib/mercado-pago.ts
+- src/routes/hospede.servicos.tsx
+- src/routes/__root.tsx
+- src/integrations/supabase/types.ts
+- public/manifest.webmanifest
+- public/icon-192.png
+- public/icon-512.png
+- supabase/migrations/20260901173000_fix_push_login_reservation.sql

@@ -490,6 +490,15 @@ export type Database = {
           reservation_id: string
         }[]
       }
+      register_admin_push_subscription: {
+        Args: {
+          _endpoint: string
+          _p256dh: string
+          _auth: string
+          _user_agent?: string | null
+        }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "guest" | "host" | "admin"

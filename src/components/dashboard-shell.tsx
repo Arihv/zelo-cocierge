@@ -16,7 +16,7 @@ import { registerAdminPush } from "@/lib/push";
 
 export type NavItem = { to: string; label: string; icon: LucideIcon };
 export type RoleLabel = "Hóspede" | "Proprietário" | "Administrador" | "Administração";
-const ROLE_ACCESS: Record<RoleLabel, AppRole[]> = { "Hóspede": ["guest", "admin"], "Proprietário": ["host", "admin"], "Administrador": ["admin"], "Administração": ["admin"] };
+const ROLE_ACCESS: Record<RoleLabel, AppRole[]> = { "Hóspede": ["guest"], "Proprietário": ["host"], "Administrador": ["admin"], "Administração": ["admin"] };
 interface Props { title: string; subtitle?: string; role: RoleLabel; userName?: string; nav: NavItem[]; logoutTo: string; children: ReactNode; }
 
 export function DashboardShell({ title, subtitle, role, nav, logoutTo, children }: Props) {
@@ -45,7 +45,8 @@ export function DashboardShell({ title, subtitle, role, nav, logoutTo, children 
     try {
       if (userRole !== "admin") return;
       const result = await registerAdminPush();
-      if (result.status === "unsupported") { toast.error("Este navegador não oferece Web Push. Use Chrome, Edge, Firefox ou Safari atualizado."); return; }
+      if (result.status === "install-required") { toast.error(result.message || "No iPhone, adicione a Zelo à Tela de Início e abra pelo ícone antes de ativar o push."); return; }
+      if (result.status === "unsupported") { toast.error(result.message || "Este navegador não oferece Web Push."); return; }
       if (result.status === "denied") { toast.error("As notificações estão bloqueadas. Libere a permissão nas configurações do site e tente novamente."); return; }
       if (result.status !== "active") { toast.error(result.message || "Não foi possível ativar as notificações."); return; }
       setBrowserPermission("granted");
