@@ -121,7 +121,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
-          options: { data: { full_name: fullName, phone: phone ?? "", cpf: cpf ?? "", role: requestedRole } },
+          options: {
+            data: { full_name: fullName, phone: phone ?? "", cpf: cpf ?? "", role: requestedRole },
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+          },
         });
         if (error) return { error: error.message };
         if (data.session) await loadIdentity(data.session);

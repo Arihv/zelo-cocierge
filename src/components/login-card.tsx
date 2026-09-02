@@ -105,7 +105,7 @@ export function LoginCard({
       toast.error("Falha no cadastro", { description: error });
       return;
     }
-    toast.success("Conta criada!", { description: "Faça login para continuar." });
+    toast.success("Conta criada!", { description: "Abra o e-mail de confirmação para ativar a conta. Depois você será direcionado à Zelo." });
     setTab("signin");
     (e.currentTarget as HTMLFormElement).reset();
   };

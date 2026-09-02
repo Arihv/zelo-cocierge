@@ -1,0 +1,7 @@
+Correções de autenticação — 02/09/2026
+
+- Signup agora envia emailRedirectTo para /auth/callback.
+- Nova rota /auth/callback conclui confirmação por code/token_hash e redireciona ao dashboard correto.
+- handle_new_user preserva email, CPF, telefone e nome no profiles.
+- Backfill preenche email dos perfis existentes a partir de auth.users.
+- Necessário adicionar https://www.zeloconciergeria.com.br/auth/callback aos Redirect URLs do Supabase Auth.
