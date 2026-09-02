@@ -494,6 +494,10 @@ export type Database = {
         Args: { _code: string }
         Returns: Json
       }
+      self_activate_reservation: {
+        Args: { _code: string; _check_in: string; _check_out: string }
+        Returns: string
+      }
       register_admin_push_subscription: {
         Args: {
           _endpoint: string

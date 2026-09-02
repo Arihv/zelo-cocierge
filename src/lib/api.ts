@@ -27,6 +27,24 @@ export function useLinkReservation() { const qc = useQueryClient(); return useMu
   if (error) throw new Error(error.message || "Não foi possível vincular a hospedagem.");
   return data;
 }, onSuccess: () => void qc.invalidateQueries({ queryKey: ["my-reservation"] }) }); }
+export function useSelfActivateReservation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ code, checkIn, checkOut }: { code: string; checkIn: string; checkOut: string }) => {
+      const { data, error } = await supabase.rpc("self_activate_reservation", {
+        _code: code,
+        _check_in: checkIn,
+        _check_out: checkOut,
+      });
+      if (error) throw new Error(error.message || "Não foi possível validar sua hospedagem.");
+      return data;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["my-reservation"] });
+      void qc.invalidateQueries({ queryKey: ["reservations"] });
+    },
+  });
+}
 export function useMyOrders() { const { user } = useAuth(); return useQuery({ queryKey: ["orders", "mine", user?.id], enabled: !!user, refetchInterval: 10_000, queryFn: async () => { const { data, error } = await supabase.from("orders").select("*, apartments(id, code, name, address, city, state), order_items(id, name, quantity, unit_price, observation)").eq("user_id", user!.id).order("created_at", { ascending: false }); if (error) throw error; return (data ?? []) as unknown as OrderRow[]; } }); }
 export function useOwnerOrders() { const { user } = useAuth(); return useQuery({ queryKey: ["orders", "owner", user?.id], enabled: !!user, refetchInterval: 10_000, queryFn: async () => { if (!user) return []; const { data, error } = await supabase.from("orders").select("*, apartments!inner(id, code, name, address, city, state, host_id), order_items(id, name, quantity, unit_price, observation)").eq("apartments.host_id", user.id).order("created_at", { ascending: false }); if (error) throw error; return (data ?? []) as unknown as OrderRow[]; } }); }
 export function useAllOrders() { return useQuery({ queryKey: ["orders", "all"], refetchInterval: 10_000, queryFn: async () => { const { data, error } = await supabase.from("orders").select("*, apartments(id, code, name, address, city, state), order_items(id, name, quantity, unit_price, observation)").order("created_at", { ascending: false }); if (error) throw error; const orders = (data ?? []) as unknown as OrderRow[]; const userIds = [...new Set(orders.map((order) => order.user_id).filter(Boolean))]; if (!userIds.length) return orders; const { data: profiles } = await supabase.from("profiles").select("id, full_name, phone").in("id", userIds); const profileMap = new Map((profiles ?? []).map((profile) => [profile.id, profile as OrderProfile])); return orders.map((order) => ({ ...order, owner_profile: profileMap.get(order.user_id) ?? null })); } }); }

@@ -104,7 +104,7 @@ function HospedeServicosPage() {
           </div>
         )}
       </div>
-      {itemCount > 0 && <a href="/hospede/carrinho" className="fixed bottom-5 right-4 z-40 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-xl lg:hidden"><ShoppingCart className="h-4 w-4" /> Carrinho ({itemCount})</a>}
+      {itemCount > 0 && <a href="/hospede/carrinho" className="fixed bottom-20 right-4 z-40 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-xl lg:hidden"><ShoppingCart className="h-4 w-4" /> Carrinho ({itemCount})</a>}
     </DashboardShell>
   );
 }

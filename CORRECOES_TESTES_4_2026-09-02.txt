@@ -1,0 +1,25 @@
+Correções solicitadas em 02/09/2026
+
+1. Reserva por autoatendimento
+- O hóspede não depende mais de a administração cadastrar uma reserva manualmente.
+- No Dashboard do hóspede, ele informa código do imóvel, check-in e check-out.
+- A RPC self_activate_reservation valida o código contra a tabela apartments e cria a reserva já vinculada ao usuário.
+- A nova reserva aparece automaticamente em Administração > Reservas pelo realtime já existente.
+- A tela /hospede/vincular também foi adaptada ao mesmo fluxo.
+
+2. Carrinho
+- Os campos de código/check-in/check-out saíram do carrinho e foram para o Dashboard.
+- O carrinho apenas exibe a hospedagem já validada.
+- O pagamento só é liberado depois da validação da hospedagem.
+
+3. Checkout Mercado Pago
+- Reduz uma consulta desnecessária de imóvel no checkout, pois passa a usar a reserva ativa.
+- Evita salvar novamente o perfil se nome/CPF/telefone já estiverem iguais aos dados do banco.
+- O botão mantém estado de carregamento durante todo o processo com a mensagem "Abrindo Mercado Pago…" para não parecer travado.
+- Nenhuma credencial do Mercado Pago foi alterada.
+
+4. Botão flutuante do carrinho no celular
+- Carrinho móvel foi movido para cima (bottom-20), evitando ficar embaixo do botão de WhatsApp.
+
+Migration necessária:
+- supabase/migrations/20260902003000_guest_self_service_reservations.sql
